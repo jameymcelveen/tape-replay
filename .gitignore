@@ -5,6 +5,8 @@ release/
 frontend/dist/
 backend/bin/
 backend/obj/
+backend/tests/**/bin/
+backend/tests/**/obj/
 backend/tapereplay.db
 backend/tapereplay.db-shm
 backend/tapereplay.db-wal
