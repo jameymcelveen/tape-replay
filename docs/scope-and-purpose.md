@@ -33,6 +33,8 @@ The MVP proves one end-to-end workflow:
 
 Proof-of-concept strategy: Ross Cameron style daily high breakout.
 
+The **target** Strategy Designer UI (presets library, config cards, live DSL pane) is documented in [Strategy Designer](strategy-designer.md). The shipped MVP uses a simpler form with the same DSL output.
+
 ## Architecture (Three Layers)
 
 The hero image reflects the stack:
@@ -40,7 +42,7 @@ The hero image reflects the stack:
 | Layer | Role |
 |-------|------|
 | **Electron shell** | Desktop host, launches the .NET backend, loads the React UI |
-| **React frontend** | Strategy builder, DSL preview, backtest results dashboard |
+| **React frontend** | Strategy builder (target: card-based designer + live DSL pane), backtest results dashboard |
 | **ASP.NET Core API** | REST endpoints, DSL parser, backtest engine, market data service |
 
 Data flows through a repository abstraction (SQLite today, PostgreSQL later). Market data flows through `IMarketDataProvider` (Polygon today, swappable).
@@ -79,4 +81,5 @@ A successful MVP run means:
 ## Related Docs
 
 - [README](../README.md): quickstart, API endpoints, build commands
+- [Strategy Designer](strategy-designer.md): target UI mockup, presets, DSL contract
 - [Makefile](../Makefile): `make dev`, `make bundle`, and other tasks

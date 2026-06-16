@@ -1,0 +1,25 @@
+---
+description: Target Strategy Designer UI vision and DSL contract for TapeReplay
+globs: frontend/src/components/**/*
+alwaysApply: false
+---
+
+# Strategy Designer (Target UX)
+
+Canonical reference: `docs/strategy-designer.md` and `docs/strategy-builder-mockup.png`.
+
+The mockup is the **target** StrategyBuilder screen, not the current MVP layout. MVP uses a simpler form in `StrategyBuilder.jsx` but must produce the same DSL the backend parses.
+
+## Target layout
+
+- **Presets library:** Daily High Breakout (MVP), Moving Average Cross (future)
+- **Config cards:** Entry Trigger, Position Sizing, Exits & Targets (stop loss, TP ladder, time exit)
+- **Right pane:** Live generated DSL with copy; parsed directly by backtest engine
+
+## Rules when editing strategy UI
+
+1. UI controls map to `StrategyConfig` and DSL sections (`exit_rules`, `risk_management`).
+2. Do not add UI-only fields that the backend cannot round-trip via DSL.
+3. Presets hydrate config objects; they are not separate execution paths.
+4. Converge new UI work toward the mockup card layout, not away from it.
+5. No em dashes in user-facing text.
