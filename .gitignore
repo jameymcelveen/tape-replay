@@ -1,0 +1,17 @@
+node_modules/
+dist/
+artifacts/
+release/
+frontend/dist/
+backend/bin/
+backend/obj/
+backend/tapereplay.db
+backend/tapereplay.db-shm
+backend/tapereplay.db-wal
+tapereplay.db
+tapereplay.db-shm
+tapereplay.db-wal
+.DS_Store
+*.user
+.env
+appsettings.*.local.json

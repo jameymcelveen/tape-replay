@@ -1,0 +1,66 @@
+{
+  "name": "tape-replay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Day trading strategy backtester (Electron + React + .NET)",
+  "main": "electron/main.js",
+  "type": "module",
+  "author": "TapeReplay",
+  "scripts": {
+    "dev:backend": "dotnet run --project backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:electron": "cross-env NODE_ENV=development electron .",
+    "dev": "concurrently -k \"npm run dev:backend\" \"npm run dev:frontend\" \"wait-on http://localhost:5180/api/health http://localhost:5173 && npm run dev:electron\"",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "dotnet build backend/TapeReplay.Api.csproj -c Release",
+    "build": "npm run build:frontend && npm run build:backend",
+    "start": "electron .",
+    "bundle": "electron-builder"
+  },
+  "build": {
+    "appId": "com.tapereplay.app",
+    "productName": "TapeReplay",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "artifacts/backend",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.finance",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.4.0",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^9.0.10"
+  }
+}
