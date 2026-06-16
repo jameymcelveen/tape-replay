@@ -10,6 +10,10 @@
 
 Day trading strategy backtester built with Electron, React, and ASP.NET Core 9.
 
+## Related Docs
+
+- [Scope and Purpose](docs/scope-and-purpose.md)
+
 ## Stack
 
 - **Frontend:** React 18+, Tailwind CSS, Electron shell
