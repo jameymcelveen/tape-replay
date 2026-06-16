@@ -15,6 +15,7 @@ Day trading strategy backtester built with Electron, React, and ASP.NET Core 9.
 - [Scope and Purpose](docs/scope-and-purpose.md)
 - [Strategy Designer](strategy-designer.md) (target UI mockup)
 - [Honesty by design](docs/honesty.md)
+- [JS patch updates (CDN)](docs/updates.md)
 
 ## Stack
 
@@ -104,15 +105,57 @@ frontend/     React UI
 backend/      ASP.NET Core API, backtest engine, data layer
 ```
 
-## Build for production
+## Installers
 
-Stage frontend and self-contained backend, then package a single Electron app:
+### macOS (local)
+
+```bash
+make installer-mac          # DMG + ZIP for this Mac's CPU
+make installer-mac-arm64    # Apple Silicon
+make installer-mac-x64      # Intel Mac
+```
+
+Output: `release/TapeReplay-0.1.0-mac-arm64.dmg` (and `.zip`).
+
+Open the DMG, drag TapeReplay to Applications.
+
+### Windows
+
+On a Windows machine (or GitHub Actions):
+
+```bash
+make installer-win
+```
+
+Output: `release/TapeReplay-0.1.0-Setup.exe` (NSIS installer), plus `.zip` and portable `.exe`.
+
+Building on macOS produces a Windows **zip/portable** only (NSIS requires Windows). GitHub Actions builds both platform installers **only on major or minor version tags**:
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0   # builds installers
+git tag v0.1.1 && git push origin v0.1.1   # skipped (patch tag, use CDN patch instead)
+```
+
+### JS patch auto-update (CDN / surge.sh)
+
+Between installer releases, ship frontend-only zips. The app fetches `manifest.json` on startup and unpacks `patch_ver_X.Y.Z.zip` when newer.
+
+```bash
+make cdn-dist PATCH=0.1.1 SURGE_DOMAIN=tapereplay.surge.sh
+cd dist && surge . tapereplay.surge.sh
+```
+
+`dist/` contains deploy artifacts: `manifest.json`, the patch zip, and optionally matching installers from `release/` (`INCLUDE_INSTALLERS=1`).
+
+Configure `electron/update-config.json` with your surge URLs before `make installer-mac`. See [docs/updates.md](docs/updates.md).
+
+### Quick bundle (current platform)
 
 ```bash
 make bundle
 ```
 
-Installers land in `release/` (DMG + ZIP on macOS, NSIS on Windows, AppImage on Linux).
+Installers land in `release/`.
 
 Other useful targets:
 

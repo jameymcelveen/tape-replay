@@ -1,0 +1,8 @@
+{
+  "installerVersion": "0.2.0",
+  "latestPatchVersion": "0.1.1",
+  "patchFile": "patch_ver_0.1.1.zip",
+  "sha256": "replace-with-sha256-from-build-patch-output",
+  "releasedAt": "2026-06-16T00:00:00Z",
+  "releaseNotes": "Optional short description of the JS-only patch."
+}

@@ -1,7 +1,7 @@
 # TapeReplay — Electron + React + .NET
 # Single-app bundle: self-contained .NET backend + Vite frontend + Electron shell
 
-.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend
+.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist publish-data
 
 BACKEND_PROJECT := backend/TapeReplay.Api.csproj
 TEST_PROJECT    := backend/tests/TapeReplay.Api.Tests/TapeReplay.Api.Tests.csproj
@@ -10,6 +10,7 @@ BACKEND_OUT     := $(ARTIFACTS_DIR)/backend
 FRONTEND_DIR    := frontend
 RELEASE_DIR     := release
 CONFIGURATION   ?= Release
+INSTALLER_SCRIPT := ./scripts/build-installer.sh
 
 OS   := $(shell uname -s)
 ARCH := $(shell uname -m)
@@ -43,7 +44,7 @@ install: ## Install npm and dotnet dependencies
 	dotnet restore $(TEST_PROJECT)
 
 clean: ## Remove build artifacts and release output
-	rm -rf $(ARTIFACTS_DIR) $(RELEASE_DIR)
+	rm -rf $(ARTIFACTS_DIR) $(RELEASE_DIR) $(CDN_DIST_DIR)/*
 	rm -rf $(FRONTEND_DIR)/dist
 	rm -rf backend/bin backend/obj
 	@echo "Clean complete."
@@ -78,6 +79,34 @@ bundle: stage ## Package a single installable Electron app (DMG/ZIP on macOS)
 	CSC_IDENTITY_AUTO_DISCOVERY=false npm run bundle
 	@echo ""
 	@echo "Bundle complete. Installers are in $(RELEASE_DIR)/"
+
+installer-mac: ## Build Mac DMG + ZIP for current CPU (arm64 or x64)
+	chmod +x $(INSTALLER_SCRIPT)
+	$(INSTALLER_SCRIPT) mac $(ARCH)
+
+installer-mac-arm64: ## Build Mac DMG + ZIP for Apple Silicon
+	chmod +x $(INSTALLER_SCRIPT)
+	$(INSTALLER_SCRIPT) mac arm64
+
+installer-mac-x64: ## Build Mac DMG + ZIP for Intel Macs
+	chmod +x $(INSTALLER_SCRIPT)
+	$(INSTALLER_SCRIPT) mac x64
+
+installer-win: ## Build Windows installer (NSIS on Windows; zip/portable on macOS)
+	chmod +x $(INSTALLER_SCRIPT)
+	$(INSTALLER_SCRIPT) win x64
+
+installers: installer-mac ## Build installer for the current OS (use CI for cross-platform)
+	@echo "For the other platform, run on Windows/macOS or tag with a minor/major version bump."
+
+build-patch: cdn-dist ## Alias for cdn-dist (usage: make build-patch PATCH=0.1.1)
+
+cdn-dist: ## Build dist/ for surge deploy (PATCH=0.1.1 SURGE_DOMAIN=foo.surge.sh)
+	chmod +x scripts/build-cdn-dist.sh scripts/build-patch.sh
+	./scripts/build-cdn-dist.sh $(PATCH)
+
+publish-data: ## Export data partitions to publish/data/ (backend must be running)
+	curl -sf -X POST http://localhost:5180/api/data/publish | (command -v jq >/dev/null && jq . || cat)
 
 run: stage ## Run the production Electron shell locally (unbundled)
 	npm start

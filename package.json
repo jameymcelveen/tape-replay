@@ -1,6 +1,9 @@
 {
   "name": "tape-replay",
   "version": "0.1.0",
+  "tapereplay": {
+    "patchVersion": "0.1.0"
+  },
   "private": true,
   "description": "Day trading strategy backtester (Electron + React + .NET)",
   "main": "electron/main.js",
@@ -15,11 +18,15 @@
     "build:backend": "dotnet build backend/TapeReplay.Api.csproj -c Release",
     "build": "npm run build:frontend && npm run build:backend",
     "start": "electron .",
-    "bundle": "electron-builder"
+    "bundle": "electron-builder",
+    "bundle:mac": "electron-builder --mac dmg zip",
+    "bundle:win": "electron-builder --win nsis zip --x64",
+    "build:patch": "bash scripts/build-patch.sh"
   },
   "build": {
     "appId": "com.tapereplay.app",
     "productName": "TapeReplay",
+    "copyright": "Copyright © 2026 TapeReplay",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -36,25 +43,64 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "electron/update-config.json",
+        "to": "update-config.json"
       }
     ],
     "mac": {
       "category": "public.app-category.finance",
       "target": [
-        "dmg",
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
         "zip"
-      ]
+      ],
+      "artifactName": "TapeReplay-${version}-mac-${arch}.${ext}",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "TapeReplay ${version}",
+      "writeUpdateInfo": false
     },
     "win": {
       "target": [
-        "nsis"
-      ]
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        "zip",
+        "portable"
+      ],
+      "artifactName": "TapeReplay-${version}-win-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TapeReplay",
+      "artifactName": "TapeReplay-${version}-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "TapeReplay-${version}-Portable.exe"
     },
     "linux": {
       "target": [
         "AppImage"
       ]
     }
+  },
+  "dependencies": {
+    "extract-zip": "^2.0.1"
   },
   "devDependencies": {
     "concurrently": "^10.0.3",

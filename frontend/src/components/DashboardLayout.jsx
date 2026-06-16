@@ -1,11 +1,28 @@
+import { useEffect, useState } from 'react';
+
 export default function DashboardLayout({ children, backendStatus }) {
+  const [patchLabel, setPatchLabel] = useState('');
+
+  useEffect(() => {
+    if (window.tapeReplay?.getPatchInfo) {
+      window.tapeReplay.getPatchInfo().then((info) => {
+        if (info?.installerVersion) {
+          setPatchLabel(`v${info.installerVersion} patch ${info.patchVersion}`);
+        }
+      }).catch(() => {});
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight">TapeReplay</h1>
-            <p className="text-sm text-slate-400">Day trading strategy backtester</p>
+            <p className="text-sm text-slate-400">
+              Day trading strategy backtester
+              {patchLabel && <span className="ml-2 text-slate-500">({patchLabel})</span>}
+            </p>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span

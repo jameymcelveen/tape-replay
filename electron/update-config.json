@@ -1,0 +1,4 @@
+{
+  "manifestUrl": "https://cdn.example.com/tapereplay/manifest.json",
+  "cdnBaseUrl": "https://cdn.example.com/tapereplay"
+}

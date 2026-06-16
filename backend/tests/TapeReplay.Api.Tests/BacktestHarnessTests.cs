@@ -22,7 +22,7 @@ public sealed class BacktestHarnessTests
 
         var provider = new FixedBarsProvider(bars);
         var repository = new InMemoryMarketDataRepository(bars);
-        var marketData = new MarketDataService(repository, provider, Microsoft.Extensions.Logging.Abstractions.NullLogger<MarketDataService>.Instance);
+        var marketData = TestMarketDataServiceFactory.Create(repository, provider);
         var engine = new BacktestEngine(new DailyHighBreakoutStrategy(), new TradeCostModel(), new HonestMetricsCalculator());
         var harness = new BacktestHarness(engine, marketData, new StrategyParser(), new InMemoryBacktestCommitRepository());
 

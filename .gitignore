@@ -1,6 +1,10 @@
 node_modules/
-dist/
+dist/*
+!dist/.gitkeep
+build/*
+!build/.gitkeep
 artifacts/
+publish/data/
 release/
 frontend/dist/
 backend/bin/

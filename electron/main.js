@@ -1,9 +1,14 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
+import {
+  checkAndApplyPatchUpdate,
+  getPatchInfo,
+  resolveFrontendIndex,
+} from './patchUpdateService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +17,7 @@ const isDev = !app.isPackaged;
 
 let backendProcess;
 let mainWindow;
+let lastPatchResult = null;
 
 function waitForBackend(url, timeoutMs = 60000) {
   const started = Date.now();
@@ -113,11 +119,24 @@ async function createWindow() {
     await mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    await mainWindow.loadFile(path.join(rootDir, 'frontend', 'dist', 'index.html'));
+    await mainWindow.loadFile(resolveFrontendIndex(rootDir));
   }
 }
 
+function registerIpc() {
+  ipcMain.handle('tapereplay:get-patch-info', () => ({
+    ...getPatchInfo(),
+    lastUpdateResult: lastPatchResult,
+  }));
+}
+
 app.whenReady().then(async () => {
+  registerIpc();
+
+  if (app.isPackaged) {
+    lastPatchResult = await checkAndApplyPatchUpdate();
+  }
+
   startBackend();
 
   try {

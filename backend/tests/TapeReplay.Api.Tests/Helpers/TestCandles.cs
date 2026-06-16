@@ -32,6 +32,9 @@ internal static class TestCandles
         return bars;
     }
 
+    public static IReadOnlyList<Candle> CreateMinuteSeries(string ticker, DateOnly date, int count, decimal startPrice = 100m) =>
+        RisingBars(ticker, date, count, startPrice);
+
     /// <summary>
     /// Oracle P&amp;L if a cheater could buy at open and sell at close whenever close &gt; open.
     /// </summary>

@@ -1,0 +1,88 @@
+name: Installers
+
+# Full Electron installers only on major/minor version tags (v0.1.0 -> v0.2.0).
+# Patch tags (v0.1.0 -> v0.1.1) are ignored. Publish JS patches to the CDN instead.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  version-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.gate.outputs.should_build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require major or minor version bump
+        id: gate
+        run: |
+          chmod +x scripts/semver-gate.sh
+          if scripts/semver-gate.sh "${GITHUB_REF_NAME}"; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  mac-installer:
+    needs: version-gate
+    if: needs.version-gate.outputs.should_build == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Build Mac installer (Apple Silicon)
+        run: chmod +x scripts/build-installer.sh && ./scripts/build-installer.sh mac arm64
+
+      - name: Upload Mac artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tape-replay-mac
+          path: |
+            release/*.dmg
+            release/*.zip
+
+  windows-installer:
+    needs: version-gate
+    if: needs.version-gate.outputs.should_build == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Build Windows installer
+        shell: bash
+        run: chmod +x scripts/build-installer.sh && ./scripts/build-installer.sh win x64
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tape-replay-windows
+          path: |
+            release/*.exe
+            release/*.zip

@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Text.Json.Serialization;
 using TapeReplay.Api.Data;
 using TapeReplay.Api.Interfaces;
+using TapeReplay.Api.Models.DataDistribution;
 using TapeReplay.Api.Services;
+using TapeReplay.Api.Services.DataDistribution;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +44,18 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 
+builder.Services.Configure<DataDistributionOptions>(
+    builder.Configuration.GetSection(DataDistributionOptions.SectionName));
+
+builder.Services.AddHttpClient("DataCdn", client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(10);
+});
+
 builder.Services.AddScoped<IMarketDataRepository, MarketDataRepository>();
+builder.Services.AddScoped<ICoverageRepository, CoverageRepository>();
+builder.Services.AddScoped<IMarketDailyRepository, MarketDailyRepository>();
+builder.Services.AddScoped<IDataPartitionStateRepository, DataPartitionStateRepository>();
 
 var apiKey = builder.Configuration["Polygon:ApiKey"];
 var useMockData = builder.Configuration.GetValue<bool>("MarketData:UseMockProvider")
@@ -62,6 +76,10 @@ builder.Services.AddSingleton<IHonestMetricsCalculator, HonestMetricsCalculator>
 builder.Services.AddSingleton<IBacktestEngine, BacktestEngine>();
 builder.Services.AddScoped<IBacktestCommitRepository, BacktestCommitRepository>();
 builder.Services.AddScoped<IBacktestHarness, BacktestHarness>();
+builder.Services.AddScoped<PartitionImportService>();
+builder.Services.AddScoped<DataPublisherService>();
+builder.Services.AddScoped<DataSubscriberService>();
+builder.Services.AddScoped<MarketDataScraperService>();
 builder.Services.AddScoped<MarketDataService>();
 
 var app = builder.Build();
@@ -69,7 +87,33 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    await SchemaMigrator.ApplyAsync(db);
+}
+
+var distributionOptions = app.Services.GetRequiredService<IOptions<DataDistributionOptions>>().Value;
+if (distributionOptions.SyncOnLaunch && distributionOptions.CanSubscribe()
+    && !string.IsNullOrWhiteSpace(distributionOptions.ManifestUrl))
+{
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            await using var scope = app.Services.CreateAsyncScope();
+            var subscriber = scope.ServiceProvider.GetRequiredService<DataSubscriberService>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DataSync");
+            var result = await subscriber.SyncAsync();
+            logger.LogInformation(
+                "Launch data sync: downloaded={Downloaded}, skipped={Skipped}, failed={Failed}",
+                result.PartitionsDownloaded,
+                result.PartitionsSkipped,
+                result.PartitionsFailed);
+        }
+        catch (Exception ex)
+        {
+            var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("DataSync");
+            logger.LogError(ex, "Launch data sync failed.");
+        }
+    });
 }
 
 app.UseCors();
