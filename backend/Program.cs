@@ -57,7 +57,11 @@ else
 
 builder.Services.AddSingleton<IStrategyParser, StrategyParser>();
 builder.Services.AddSingleton<IStrategy, DailyHighBreakoutStrategy>();
+builder.Services.AddSingleton<ITradeCostModel, TradeCostModel>();
+builder.Services.AddSingleton<IHonestMetricsCalculator, HonestMetricsCalculator>();
 builder.Services.AddSingleton<IBacktestEngine, BacktestEngine>();
+builder.Services.AddScoped<IBacktestCommitRepository, BacktestCommitRepository>();
+builder.Services.AddScoped<IBacktestHarness, BacktestHarness>();
 builder.Services.AddScoped<MarketDataService>();
 
 var app = builder.Build();

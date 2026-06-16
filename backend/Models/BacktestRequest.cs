@@ -12,4 +12,8 @@ public sealed class BacktestRequest
     public StrategyConfig? Strategy { get; init; }
 
     public string? Dsl { get; init; }
+
+    public TradeCostConfig? Costs { get; init; }
+
+    public decimal StartingCapitalUsd { get; init; } = 25_000m;
 }

@@ -13,7 +13,8 @@ Day trading strategy backtester built with Electron, React, and ASP.NET Core 9.
 ## Related Docs
 
 - [Scope and Purpose](docs/scope-and-purpose.md)
-- [Strategy Designer](docs/strategy-designer.md) (target UI mockup)
+- [Strategy Designer](strategy-designer.md) (target UI mockup)
+- [Honesty by design](docs/honesty.md)
 
 ## Stack
 
@@ -71,13 +72,17 @@ Set your key in `backend/appsettings.Development.json`:
 
 With `UseMockProvider: true` (default in `appsettings.json`), the API serves synthetic minute bars so you can test without Polygon.
 
+## Why this tool is pessimistic by design
+
+TapeReplay measures whether a strategy survives **after costs** on **data you did not tune against**. A single green day is not evidence. See [docs/honesty.md](docs/honesty.md) for train/test split, cost defaults, metrics, and the look-ahead contract.
+
 ## MVP flow
 
-1. Select ticker and date in the Strategy Builder.
-2. Configure position size, stop loss, take profit targets, auto-exit time, and risk limits.
-3. Preview the generated strategy DSL.
-4. Run backtest: backend loads cached bars or fetches from Polygon, replays minute bars, returns P&L and trade log.
-5. Review results in the dashboard.
+1. Configure strategy knobs (entry, sizing, exits, risk).
+2. **Tune** on an in-sample date range, then **Commit** (freezes config).
+3. **Evaluate** on an out-of-sample range (headline results, overfitting warning if in-sample looked too good).
+4. Optional: **Exploratory Day** for quick dev (labeled "not evidence").
+5. Review honest metrics: max drawdown headlines, net-after-costs P&L, plain-English verdict.
 
 ## API endpoints
 
@@ -86,7 +91,9 @@ With `UseMockProvider: true` (default in `appsettings.json`), the API serves syn
 | GET | `/api/health` | Health check |
 | POST | `/api/strategy/parse` | Parse DSL to `StrategyConfig` |
 | POST | `/api/strategy/generate` | Generate DSL from config |
-| POST | `/api/backtest/run` | Run single-day backtest |
+| POST | `/api/backtest/run` | Exploratory single-day backtest |
+| POST | `/api/backtest/commit` | Freeze strategy + in-sample window |
+| POST | `/api/backtest/evaluate` | Score frozen strategy out-of-sample |
 | GET | `/api/marketdata/{ticker}/{date}` | Load or fetch minute bars |
 
 ## Project layout

@@ -31,10 +31,24 @@ export async function parseDsl(dsl) {
   });
 }
 
-export async function runBacktest({ ticker, date, strategy }) {
+export async function runBacktest(payload) {
   return request('/api/backtest/run', {
     method: 'POST',
-    body: JSON.stringify({ ticker, date, strategy }),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function commitBacktest(payload) {
+  return request('/api/backtest/commit', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function evaluateBacktest(payload) {
+  return request('/api/backtest/evaluate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   });
 }
 

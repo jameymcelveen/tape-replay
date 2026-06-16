@@ -4,6 +4,7 @@
 .PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend
 
 BACKEND_PROJECT := backend/TapeReplay.Api.csproj
+TEST_PROJECT    := backend/tests/TapeReplay.Api.Tests/TapeReplay.Api.Tests.csproj
 ARTIFACTS_DIR   := artifacts
 BACKEND_OUT     := $(ARTIFACTS_DIR)/backend
 FRONTEND_DIR    := frontend
@@ -39,6 +40,7 @@ install: ## Install npm and dotnet dependencies
 	npm install
 	npm install --prefix $(FRONTEND_DIR)
 	dotnet restore $(BACKEND_PROJECT)
+	dotnet restore $(TEST_PROJECT)
 
 clean: ## Remove build artifacts and release output
 	rm -rf $(ARTIFACTS_DIR) $(RELEASE_DIR)
@@ -89,6 +91,8 @@ verify-backend: publish-backend ## Smoke-test the published backend binary
 		kill $$BACKEND_PID 2>/dev/null || true; \
 		if [ $$STATUS -eq 0 ]; then echo "Backend health check passed."; else echo "Backend health check failed."; exit 1; fi
 
-test: ## Build backend and frontend, verify backend health
+test: ## Run unit tests and backend health smoke test
+	dotnet test $(TEST_PROJECT) -c $(CONFIGURATION)
+	npm run test --prefix $(FRONTEND_DIR)
 	dotnet build $(BACKEND_PROJECT) -c $(CONFIGURATION)
 	$(MAKE) verify-backend

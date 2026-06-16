@@ -9,17 +9,43 @@ public interface IStrategy
 {
     string Name { get; }
 
-    bool ShouldEnter(BarContext context, StrategyConfig config);
+    /// <summary>
+    /// Uses only prior bars and the current bar open (bar-timing contract).
+    /// </summary>
+    bool ShouldEnter(EntryDecisionContext context, StrategyConfig config);
 
+    /// <summary>
+    /// Intrabar exits may use the current bar high/low; time exits use bar close at end of bar.
+    /// </summary>
     ExitSignal? EvaluateExit(OpenPosition position, BarContext context, StrategyConfig config);
 }
 
 /// <summary>
-/// Per-bar market context passed to strategy evaluation.
+/// Restricted context for entry decisions on bar N: prior bars and bar N open only.
 /// </summary>
+/// <remarks>
+/// Bar-timing contract: no high, low, or close from bar N may influence entry signals.
+/// </remarks>
+public sealed class EntryDecisionContext
+{
+    public int BarIndex { get; init; }
+
+    public IReadOnlyList<Candle> PriorBars { get; init; } = [];
+
+    public decimal RunningDailyHigh { get; init; }
+
+    public decimal BarOpen { get; init; }
+
+    public TimeOnly MarketTime { get; init; }
+}
+
 public sealed class BarContext
 {
+    public int BarIndex { get; init; }
+
     public required Candle Bar { get; init; }
+
+    public IReadOnlyList<Candle> PriorBars { get; init; } = [];
 
     public decimal RunningDailyHigh { get; init; }
 
@@ -36,6 +62,10 @@ public sealed class OpenPosition
     public DateTime EntryTime { get; init; }
 
     public decimal EntryPrice { get; init; }
+
+    public decimal EntryReferencePrice { get; init; }
+
+    public decimal EntryCostsTotal { get; init; }
 
     public int RemainingShares { get; set; }
 

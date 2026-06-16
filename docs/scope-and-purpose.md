@@ -57,6 +57,7 @@ These are planned directions, not current deliverables:
 - Multi-day backtests
 - Web client hitting cloud data directly
 - Advanced charting (candlesticks plus signal overlays)
+- **Survivorship-bias-free multi-ticker universes** (delisted names must be included when this ships; see [Honesty](honesty.md))
 
 The codebase is structured so these can be added without a rewrite.
 
@@ -82,4 +83,5 @@ A successful MVP run means:
 
 - [README](../README.md): quickstart, API endpoints, build commands
 - [Strategy Designer](strategy-designer.md): target UI mockup, presets, DSL contract
+- [Honesty by design](honesty.md): train/test split, costs, metrics, look-ahead contract
 - [Makefile](../Makefile): `make dev`, `make bundle`, and other tasks

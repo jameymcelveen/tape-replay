@@ -10,17 +10,26 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
     public DbSet<MarketDataEntity> MarketData => Set<MarketDataEntity>();
 
+    public DbSet<BacktestCommitEntity> BacktestCommits => Set<BacktestCommitEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var entity = modelBuilder.Entity<MarketDataEntity>();
+        var marketData = modelBuilder.Entity<MarketDataEntity>();
 
-        entity.ToTable("MarketData");
-        entity.HasKey(e => e.Id);
-        entity.Property(e => e.Ticker).HasMaxLength(16).IsRequired();
-        entity.Property(e => e.Open).HasPrecision(18, 6);
-        entity.Property(e => e.High).HasPrecision(18, 6);
-        entity.Property(e => e.Low).HasPrecision(18, 6);
-        entity.Property(e => e.Close).HasPrecision(18, 6);
-        entity.HasIndex(e => new { e.Ticker, e.DateTime });
+        marketData.ToTable("MarketData");
+        marketData.HasKey(e => e.Id);
+        marketData.Property(e => e.Ticker).HasMaxLength(16).IsRequired();
+        marketData.Property(e => e.Open).HasPrecision(18, 6);
+        marketData.Property(e => e.High).HasPrecision(18, 6);
+        marketData.Property(e => e.Low).HasPrecision(18, 6);
+        marketData.Property(e => e.Close).HasPrecision(18, 6);
+        marketData.HasIndex(e => new { e.Ticker, e.DateTime });
+
+        var commits = modelBuilder.Entity<BacktestCommitEntity>();
+        commits.ToTable("BacktestCommits");
+        commits.HasKey(e => e.Id);
+        commits.Property(e => e.Ticker).HasMaxLength(16).IsRequired();
+        commits.Property(e => e.StrategyJson).IsRequired();
+        commits.Property(e => e.InSampleNetReturnPercent).HasPrecision(18, 6);
     }
 }
