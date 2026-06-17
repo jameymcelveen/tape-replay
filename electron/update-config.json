@@ -1,4 +1,4 @@
 {
-  "manifestUrl": "https://cdn.example.com/tapereplay/manifest.json",
-  "cdnBaseUrl": "https://cdn.example.com/tapereplay"
+  "manifestUrl": "https://tapereplay.surge.sh/manifest.json",
+  "cdnBaseUrl": "https://tapereplay.surge.sh"
 }

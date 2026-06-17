@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chart backtest — TapeReplay Help</title>
+  <link rel="stylesheet" href="assets/help.css" />
+</head>
+<body>
+  <div class="layout">
+    <nav>
+      <h1>TapeReplay Help</h1>
+      <p class="tagline">Day trading strategy backtester</p>
+      <ul>
+        <li><a href="index.html">Getting started</a></li>
+        <li><a href="strategy-lab.html">Strategy lab</a></li>
+        <li><a href="chart-backtest.html" class="active">Chart backtest</a></li>
+        <li><a href="collecting-data.html">Collecting data</a></li>
+        <li><a href="honesty.html">Honesty by design</a></li>
+        <li><a href="updates.html">Updates &amp; install</a></li>
+      </ul>
+    </nav>
+    <main>
+      <h1>Chart backtest</h1>
+      <p class="lead">
+        Run intraday rules (ORB or PMH) against stored minute bars, render candlesticks with volume,
+        and overlay strategy entries/exits plus a perfect-hindsight benchmark.
+      </p>
+
+      <figure class="figure">
+        <div class="screenshot">
+          <div class="screenshot-chrome">
+            <span></span><span></span><span></span>
+            <span class="screenshot-title">Chart backtest — VSME 2026-06-16</span>
+          </div>
+          <div class="screenshot-body">
+            <div class="ui-panel" style="margin:0.85rem">
+              <h3>Chart backtest controls</h3>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;font-size:0.68rem">
+                <div><span class="ui-label">Ticker</span><span class="ui-input">VSME</span></div>
+                <div><span class="ui-label">Date (ET)</span><span class="ui-input">2026-06-16</span></div>
+                <div><span class="ui-label">Rule</span><span class="ui-input">ORB</span></div>
+                <div><span class="ui-label">Scope</span><span class="ui-input">Full session</span></div>
+              </div>
+              <span class="ui-btn ui-btn-violet">Run backtest</span>
+            </div>
+            <div class="ui-panel" style="margin:0 0.85rem 0.85rem">
+              <div class="chart-mock">
+                <span class="marker buy">▲ Buy</span>
+                <span class="marker sell">▼ stop</span>
+                <span class="marker ideal">● Ideal buy</span>
+                <div class="candles">
+                  <div class="candle red"></div><div class="candle"></div><div class="candle"></div>
+                  <div class="candle red"></div><div class="candle"></div><div class="candle"></div>
+                  <div class="candle"></div><div class="candle"></div><div class="candle"></div>
+                </div>
+                <div class="vol">
+                  <span class="pre"></span><span class="pre"></span><span></span><span></span>
+                  <span></span><span></span><span class="post"></span>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.5rem">
+                <div style="font-size:0.68rem"><span style="color:#38bdf8">Strategy:</span> entry $2.45 → stop −5%</div>
+                <div style="font-size:0.68rem"><span style="color:#a78bfa">Hindsight:</span> $2.01 → $2.90 (44%)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Figure 3 — Candlestick chart with strategy and hindsight markers</figcaption>
+      </figure>
+
+      <h2>Opening the view</h2>
+      <p>Click <strong>Chart backtest</strong> in the app header. The layout expands to full width for the chart.</p>
+
+      <h2>Controls</h2>
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Ticker / Date</td><td>Any symbol with minute bars in your local SQLite database.</td></tr>
+          <tr><td>From / To (ET)</td><td>Intraday window in US Eastern time. Use presets for RTH or full session.</td></tr>
+          <tr><td>Rule</td><td><strong>ORB</strong> — opening-range breakout. <strong>PMH</strong> — premarket high breakout.</td></tr>
+          <tr><td>OR minutes</td><td>Length of opening range for ORB (default 5).</td></tr>
+          <tr><td>Stop % / Target %</td><td>Hard stop and profit target from entry. Same-bar stop wins if both hit.</td></tr>
+          <tr><td>Scope</td><td><strong>Regular</strong> — RTH only. <strong>All</strong> — pre + RTH + post (until 8pm ET).</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Reading the chart</h2>
+      <ul>
+        <li><span style="color:#38bdf8">▲ Azure arrow</span> — strategy entry (Buy).</li>
+        <li><span style="color:#fbbf24">▼ Amber arrow</span> — strategy exit (label shows stop, target, or close).</li>
+        <li><span style="color:#a78bfa">● Violet circle</span> — perfect hindsight buy/sell (ceiling benchmark).</li>
+        <li>Volume bars are tinted: violet = premarket, slate = regular, sky = post-market.</li>
+        <li>Time axis is labeled in <strong>US/Eastern</strong> even though bars are stored in UTC.</li>
+      </ul>
+
+      <div class="callout">
+        <strong>Sparse minutes:</strong> only minutes that actually traded are plotted. Missing minutes are not
+        synthesized — markers snap to the nearest real bar within one minute.
+      </div>
+
+      <h2>Capture percent</h2>
+      <p>
+        <code>capturePct = strategy P&amp;L per share ÷ hindsight profit per share × 100</code>.
+        A negative capture means the rule lost money while a large hindsight move was available
+        (e.g. stopped out of an ORB while the stock later ran).
+      </p>
+
+      <h2>Example: VSME 2026-06-16</h2>
+      <p>With full-session scope and 5-minute ORB:</p>
+      <ul>
+        <li>ORB entry near <strong>$2.45</strong>, quick <strong>stop</strong> out.</li>
+        <li>Hindsight ceiling roughly <strong>$2.01 → $2.90</strong> (premarket low to afternoon high).</li>
+        <li>The chart makes the gap between your rule and the ceiling obvious.</li>
+      </ul>
+      <p>Use <strong>RTH preset</strong> if you want hindsight computed on regular session only.</p>
+    </main>
+  </div>
+</body>
+</html>

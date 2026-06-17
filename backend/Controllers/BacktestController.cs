@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using TapeReplay.Api.Interfaces;
 using TapeReplay.Api.Models;
+using TapeReplay.Api.Models.ChartBacktest;
 using TapeReplay.Api.Services;
+using TapeReplay.Api.Services.ChartBacktest;
 
 namespace TapeReplay.Api.Controllers;
 
@@ -14,6 +16,7 @@ public sealed class BacktestController(
     IBacktestEngine backtestEngine,
     IBacktestHarness backtestHarness,
     MarketDataService marketDataService,
+    ChartBacktestService chartBacktestService,
     IStrategyParser parser) : ControllerBase
 {
     /// <summary>
@@ -51,6 +54,40 @@ public sealed class BacktestController(
             request.StartingCapitalUsd);
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Runs an intraday replay rule against stored minute bars and returns chart data with hindsight benchmark.
+    /// </summary>
+    [HttpPost("chart")]
+    public async Task<ActionResult<ChartBacktestResponse>> Chart(
+        [FromBody] ChartBacktestRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Ticker))
+        {
+            return BadRequest(new { error = "Ticker is required." });
+        }
+
+        if (request.To < request.From)
+        {
+            return BadRequest(new { error = "'to' must be on or after 'from'." });
+        }
+
+        if (request.Shares <= 0)
+        {
+            return BadRequest(new { error = "Shares must be positive." });
+        }
+
+        try
+        {
+            var response = await chartBacktestService.RunAsync(request, cancellationToken);
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     /// <summary>

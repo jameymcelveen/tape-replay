@@ -55,6 +55,37 @@ public sealed class MarketDataRepository(AppDbContext dbContext) : IMarketDataRe
         return rows.Select(MapToCandle).ToList();
     }
 
+    public async Task<IReadOnlyList<Candle>> GetBarsInRangeAsync(
+        string ticker,
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedTicker = ticker.ToUpperInvariant();
+        var from = NormalizeUtc(fromUtc);
+        var to = NormalizeUtc(toUtc);
+
+        if (to < from)
+        {
+            (from, to) = (to, from);
+        }
+
+        var rows = await dbContext.MarketData
+            .AsNoTracking()
+            .Where(m => m.Ticker == normalizedTicker && m.DateTime >= from && m.DateTime <= to)
+            .OrderBy(m => m.DateTime)
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(MapToCandle).ToList();
+    }
+
+    private static DateTime NormalizeUtc(DateTime value) => value.Kind switch
+    {
+        DateTimeKind.Utc => value,
+        DateTimeKind.Local => value.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+    };
+
     public async Task SaveBarsAsync(string ticker, IReadOnlyList<Candle> bars, CancellationToken cancellationToken = default)
     {
         if (bars.Count == 0)

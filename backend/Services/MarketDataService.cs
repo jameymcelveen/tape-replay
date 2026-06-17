@@ -104,4 +104,17 @@ public sealed class MarketDataService(
 
         return result;
     }
+
+    /// <summary>
+    /// Loads minute bars from SQLite only (no CDN scrape or provider fetch).
+    /// </summary>
+    public Task<IReadOnlyList<Models.Candle>> GetStoredMinuteBarsInRangeAsync(
+        string ticker,
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(ticker);
+        return repository.GetBarsInRangeAsync(ticker.ToUpperInvariant(), fromUtc, toUtc, cancellationToken);
+    }
 }

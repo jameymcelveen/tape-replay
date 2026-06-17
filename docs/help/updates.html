@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Updates &amp; install — TapeReplay Help</title>
+  <link rel="stylesheet" href="assets/help.css" />
+</head>
+<body>
+  <div class="layout">
+    <nav>
+      <h1>TapeReplay Help</h1>
+      <p class="tagline">Day trading strategy backtester</p>
+      <ul>
+        <li><a href="index.html">Getting started</a></li>
+        <li><a href="strategy-lab.html">Strategy lab</a></li>
+        <li><a href="chart-backtest.html">Chart backtest</a></li>
+        <li><a href="collecting-data.html">Collecting data</a></li>
+        <li><a href="honesty.html">Honesty by design</a></li>
+        <li><a href="updates.html" class="active">Updates &amp; install</a></li>
+      </ul>
+    </nav>
+    <main>
+      <h1>Updates &amp; install</h1>
+      <p class="lead">
+        TapeReplay ships as a bundled Electron app with a self-contained .NET backend.
+        UI-only fixes can arrive via CDN patches between full installer releases.
+      </p>
+
+      <h2>Install from release</h2>
+      <ul>
+        <li><strong>macOS</strong> — open the DMG, drag TapeReplay to Applications.</li>
+        <li><strong>Windows</strong> — run the NSIS setup exe from the release page.</li>
+      </ul>
+      <p>Build locally: <code>make installer-mac</code> or <code>make installer-win</code> (on Windows).</p>
+
+      <h2>CDN layout (tapereplay.surge.sh)</h2>
+      <table>
+        <thead>
+          <tr><th>URL path</th><th>Contents</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>/manifest.json</code></td><td>JS patch auto-update manifest</td></tr>
+          <tr><td><code>/patch_ver_X.Y.Z.zip</code></td><td>Frontend-only patch bundle</td></tr>
+          <tr><td><code>/help/</code></td><td>This documentation site</td></tr>
+          <tr><td><code>/data/manifest.json</code></td><td>Market data partition manifest (separate deploy)</td></tr>
+        </tbody>
+      </table>
+
+      <h2>JS patch updates</h2>
+      <p>On startup the app checks <code>manifest.json</code>. If a newer patch version exists, it downloads
+      and unpacks the zip into user data — no full reinstall required.</p>
+      <pre>make cdn-dist PATCH=0.1.1 SURGE_DOMAIN=tapereplay.surge.sh
+cd dist && surge . tapereplay.surge.sh</pre>
+      <p>Patch deploys include the built frontend zip <strong>and</strong> the <code>help/</code> folder.</p>
+
+      <h2>Version display</h2>
+      <p>The app header shows installer version and patch version when running the Electron shell
+      (e.g. <em>v0.1.0 patch 0.1.1</em>).</p>
+
+      <div class="callout">
+        <strong>Major/minor bumps</strong> need a new installer build. Patch bumps are CDN-only.
+        CI builds installers only on major/minor tags.
+      </div>
+
+      <h2>Where data lives (installed app)</h2>
+      <p>SQLite and downloaded patches live under the OS user-data folder for TapeReplay, not inside
+      the application bundle. Your recorded bars persist across app updates.</p>
+    </main>
+  </div>
+</body>
+</html>

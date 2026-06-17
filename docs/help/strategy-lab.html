@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strategy lab — TapeReplay Help</title>
+  <link rel="stylesheet" href="assets/help.css" />
+</head>
+<body>
+  <div class="layout">
+    <nav>
+      <h1>TapeReplay Help</h1>
+      <p class="tagline">Day trading strategy backtester</p>
+      <ul>
+        <li><a href="index.html">Getting started</a></li>
+        <li><a href="strategy-lab.html" class="active">Strategy lab</a></li>
+        <li><a href="chart-backtest.html">Chart backtest</a></li>
+        <li><a href="collecting-data.html">Collecting data</a></li>
+        <li><a href="honesty.html">Honesty by design</a></li>
+        <li><a href="updates.html">Updates &amp; install</a></li>
+      </ul>
+    </nav>
+    <main>
+      <h1>Strategy lab</h1>
+      <p class="lead">
+        The Strategy lab is the honest backtest workflow: tune on in-sample dates, freeze the config,
+        then score on out-of-sample dates you did not optimize against.
+      </p>
+
+      <figure class="figure">
+        <div class="screenshot">
+          <div class="screenshot-chrome">
+            <span></span><span></span><span></span>
+            <span class="screenshot-title">Strategy lab — configuration</span>
+          </div>
+          <div class="screenshot-body">
+            <div class="ui-panel" style="margin:0.85rem">
+              <h3>Strategy configuration</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+                <div>
+                  <span class="ui-label">Ticker</span>
+                  <span class="ui-input">AAPL</span>
+                  <span class="ui-label">In-sample start / end</span>
+                  <span class="ui-input">2024-06-01 → 2024-06-07</span>
+                </div>
+                <div>
+                  <span class="ui-label">Position size (USD)</span>
+                  <span class="ui-input">1000</span>
+                  <span class="ui-label">Stop loss %</span>
+                  <span class="ui-input">1.0</span>
+                </div>
+              </div>
+              <div style="margin-top:0.5rem;padding:0.5rem;border:1px solid #334155;border-radius:0.4rem;background:#020617">
+                <span style="color:#34d399;font-size:0.72rem">Entry:</span>
+                <span style="font-size:0.68rem;color:#94a3b8"> Price breaks above running daily high (no look-ahead)</span>
+              </div>
+              <span class="ui-btn ui-btn-amber">Exploratory Day</span>
+              <span class="ui-btn ui-btn-violet">Commit In-Sample</span>
+              <span class="ui-btn ui-btn-emerald">Evaluate Out-of-Sample</span>
+            </div>
+          </div>
+        </div>
+        <figcaption>Figure 2 — Strategy knobs and the three run modes</figcaption>
+      </figure>
+
+      <h2>Three run modes</h2>
+      <table>
+        <thead>
+          <tr><th>Button</th><th>What it does</th><th>Trust level</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Exploratory Day</strong></td>
+            <td>Single-day backtest for quick dev feedback</td>
+            <td>⚠️ Not evidence — labeled exploratory</td>
+          </tr>
+          <tr>
+            <td><strong>Commit In-Sample</strong></td>
+            <td>Freezes strategy JSON against your in-sample date window</td>
+            <td>Training set only</td>
+          </tr>
+          <tr>
+            <td><strong>Evaluate Out-of-Sample</strong></td>
+            <td>Runs the frozen commit on a new date range</td>
+            <td>✅ Headline honest metrics</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Recommended workflow</h2>
+      <ol class="steps">
+        <li>
+          <strong>Exploratory Day</strong> — sanity-check one ticker/date. Confirm trades look plausible
+          before burning time on a full window.
+        </li>
+        <li>
+          <strong>Set in-sample dates</strong> — pick a range with enough trading days in your SQLite cache.
+          Wider is not always better; avoid tuning on the same days you will evaluate.
+        </li>
+        <li>
+          <strong>Commit In-Sample</strong> — saves a <code>commitId</code>. Strategy parameters are frozen;
+          you cannot accidentally change them mid-evaluation.
+        </li>
+        <li>
+          <strong>Set out-of-sample dates</strong> — must not overlap in-sample. Click
+          <strong>Evaluate Out-of-Sample</strong>.
+        </li>
+        <li>
+          <strong>Read the verdict</strong> — max drawdown headlines, net after costs, and an overfitting
+          warning if in-sample looked unrealistically good.
+        </li>
+      </ol>
+
+      <div class="callout warn">
+        <strong>Exploratory results are yellow for a reason.</strong> They appear in the UI with an
+        “not evidence” banner. Do not share exploratory P&amp;L as proof of edge.
+      </div>
+
+      <h2>Strategy parameters</h2>
+      <ul>
+        <li><strong>Entry</strong> — daily high breakout at bar open (running high, no future data).</li>
+        <li><strong>Position size</strong> — USD notional per trade.</li>
+        <li><strong>Stop / take-profit</strong> — weighted TP legs plus hard stop.</li>
+        <li><strong>Auto exit time</strong> — force flat before close (default 14:00 market time).</li>
+        <li><strong>Risk caps</strong> — max daily loss and max concurrent trades.</li>
+      </ul>
+
+      <p>Preview DSL exports the parsed strategy text for auditing. See
+      <a href="honesty.html">Honesty by design</a> for cost defaults and metrics definitions.</p>
+    </main>
+  </div>
+</body>
+</html>

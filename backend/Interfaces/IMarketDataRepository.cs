@@ -14,6 +14,12 @@ public interface IMarketDataRepository
 
     Task<IReadOnlyList<Candle>> GetBarsAsync(string ticker, DateOnly date, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Candle>> GetBarsInRangeAsync(
+        string ticker,
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken = default);
+
     Task SaveBarsAsync(string ticker, IReadOnlyList<Candle> bars, CancellationToken cancellationToken = default);
 
     Task UpsertMinuteBarsAsync(IReadOnlyList<Candle> bars, CancellationToken cancellationToken = default);

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Collecting data — TapeReplay Help</title>
+  <link rel="stylesheet" href="assets/help.css" />
+</head>
+<body>
+  <div class="layout">
+    <nav>
+      <h1>TapeReplay Help</h1>
+      <p class="tagline">Day trading strategy backtester</p>
+      <ul>
+        <li><a href="index.html">Getting started</a></li>
+        <li><a href="strategy-lab.html">Strategy lab</a></li>
+        <li><a href="chart-backtest.html">Chart backtest</a></li>
+        <li><a href="collecting-data.html" class="active">Collecting data</a></li>
+        <li><a href="honesty.html">Honesty by design</a></li>
+        <li><a href="updates.html">Updates &amp; install</a></li>
+      </ul>
+    </nav>
+    <main>
+      <h1>Collecting market data</h1>
+      <p class="lead">
+        TapeReplay stores minute bars in a local SQLite file (<code>tapereplay.db</code>).
+        Data is pulled from Polygon.io (or imported from the CDN) and never committed to git.
+      </p>
+
+      <h2>Prerequisites</h2>
+      <ul>
+        <li>Polygon.io API key in <code>backend/appsettings.Development.local.json</code> (gitignored).</li>
+        <li><code>MarketData:UseMockProvider: false</code> in that file.</li>
+        <li><code>DataDistribution:Role</code> set to <code>Both</code> or <code>Publisher</code>.</li>
+        <li><code>ScraperEnabled: true</code> (default for publisher role).</li>
+      </ul>
+
+      <figure class="figure">
+        <div class="screenshot">
+          <div class="screenshot-chrome">
+            <span></span><span></span><span></span>
+            <span class="screenshot-title">Terminal — make record</span>
+          </div>
+          <div class="screenshot-body">
+            <pre style="margin:0;border:none;border-radius:0;font-size:0.72rem">$ make dev          # terminal 1 — keep running
+$ make record       # terminal 2 — pull from Polygon
+
+Waiting for API at http://localhost:5180...
+Queueing EDHL,CCHH,CAST,VSME,JRSH from 2026-06-11 to 2026-06-17...
+Recording from Polygon (runs until pending queue is empty)...
+{ "totalRecorded": 12, "rounds": 3, "completed": true }
+
+$ make verify-data
+  EDHL: 2147 bars
+  VSME: 1823 bars
+  ...</pre>
+          </div>
+        </div>
+        <figcaption>Figure 4 — Recording minute bars via Makefile (rate-limited)</figcaption>
+      </figure>
+
+      <h2>Quick commands</h2>
+      <table>
+        <thead>
+          <tr><th>Command</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>make dev</code></td><td>Start API + UI (required before recording)</td></tr>
+          <tr><td><code>make record</code></td><td>Queue + scrape until empty (default matt-five tickers)</td></tr>
+          <tr><td><code>make record TICKERS="AAPL" DATE_FROM=... DATE_TO=...</code></td><td>Custom pull</td></tr>
+          <tr><td><code>make record-overnight</code></td><td>Same data with per-round progress output</td></tr>
+          <tr><td><code>make verify-data</code></td><td>Bar counts in SQLite</td></tr>
+          <tr><td><code>make publish-data</code></td><td>Export partitions to <code>publish/data/</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Polygon rate limits</h2>
+      <p>Free tier allows about <strong>5 API calls per minute</strong>. TapeReplay enforces this automatically
+      and waits <strong>60 seconds</strong> after any HTTP 429 before retrying. Tune in config:</p>
+      <pre>"Polygon": {
+  "ApiKey": "...",
+  "MaxCallsPerMinute": 5,
+  "BackoffSecondsOn429": 60
+}</pre>
+      <p>Large jobs are slow but safe — expect one call roughly every 12 seconds at steady state.</p>
+
+      <h2>Overnight / startup jobs</h2>
+      <p>Add jobs to your local config with <code>Recording:runOnStartup: true</code>. On backend start,
+      pending ticker/date cells queue and scrape automatically. Restart <code>make dev</code> after editing.</p>
+
+      <h2>Coverage grid</h2>
+      <p>Each ticker/day has a status:</p>
+      <ul>
+        <li><strong>Done</strong> — bars recorded.</li>
+        <li><strong>Pending</strong> — queued, not yet scraped.</li>
+        <li><strong>Skipped</strong> — weekend or no Polygon data for that day.</li>
+      </ul>
+      <pre>curl -s 'http://localhost:5180/api/data/coverage/minute?ticker=VSME&amp;startDate=2026-06-11&amp;endDate=2026-06-16' | jq .</pre>
+
+      <h2>CDN publish (optional)</h2>
+      <p>Export parquet partitions and deploy to Surge under <code>/data</code> so other machines can subscribe
+      without scraping. See <a href="updates.html">Updates &amp; install</a> for CDN layout.</p>
+    </main>
+  </div>
+</body>
+</html>

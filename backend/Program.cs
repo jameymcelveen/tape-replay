@@ -6,6 +6,8 @@ using TapeReplay.Api.Interfaces;
 using TapeReplay.Api.Models.DataDistribution;
 using TapeReplay.Api.Models;
 using TapeReplay.Api.Services;
+using TapeReplay.Api.Services.ChartBacktest;
+using TapeReplay.Api.Services.ChartBacktest.Rules;
 using TapeReplay.Api.Services.DataDistribution;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -77,6 +79,9 @@ builder.Services.AddSingleton<IStrategy, DailyHighBreakoutStrategy>();
 builder.Services.AddSingleton<ITradeCostModel, TradeCostModel>();
 builder.Services.AddSingleton<IHonestMetricsCalculator, HonestMetricsCalculator>();
 builder.Services.AddSingleton<IBacktestEngine, BacktestEngine>();
+builder.Services.AddSingleton<IReplayRuleStrategy, OrbReplayStrategy>();
+builder.Services.AddSingleton<IReplayRuleStrategy, PmhReplayStrategy>();
+builder.Services.AddScoped<ChartBacktestService>();
 builder.Services.AddScoped<IBacktestCommitRepository, BacktestCommitRepository>();
 builder.Services.AddScoped<IBacktestHarness, BacktestHarness>();
 builder.Services.AddScoped<PartitionImportService>();

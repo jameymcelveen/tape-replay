@@ -38,6 +38,13 @@ export async function runBacktest(payload) {
   });
 }
 
+export async function runChartBacktest(payload) {
+  return request('/api/backtest/chart', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function commitBacktest(payload) {
   return request('/api/backtest/commit', {
     method: 'POST',

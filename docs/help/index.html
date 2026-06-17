@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Getting started — TapeReplay Help</title>
+  <link rel="stylesheet" href="assets/help.css" />
+</head>
+<body>
+  <div class="layout">
+    <nav>
+      <h1>TapeReplay Help</h1>
+      <p class="tagline">Day trading strategy backtester</p>
+      <ul>
+        <li><a href="index.html" class="active">Getting started</a></li>
+        <li><a href="strategy-lab.html">Strategy lab</a></li>
+        <li><a href="chart-backtest.html">Chart backtest</a></li>
+        <li><a href="collecting-data.html">Collecting data</a></li>
+        <li><a href="honesty.html">Honesty by design</a></li>
+        <li><a href="updates.html">Updates &amp; install</a></li>
+      </ul>
+    </nav>
+    <main>
+      <h1>Getting started</h1>
+      <p class="lead">
+        TapeReplay is a desktop app (Electron) with a local .NET API and React UI.
+        You configure strategies, run backtests against real minute bars in SQLite, and
+        visualize trades on candlestick charts.
+      </p>
+
+      <figure class="figure">
+        <div class="screenshot">
+          <div class="screenshot-chrome">
+            <span></span><span></span><span></span>
+            <span class="screenshot-title">TapeReplay — main window</span>
+          </div>
+          <div class="screenshot-body">
+            <div class="ui-header">
+              <div>
+                <h2>TapeReplay</h2>
+                <div style="font-size:0.7rem;color:#94a3b8">Day trading strategy backtester</div>
+              </div>
+              <div style="display:flex;gap:1rem;align-items:center">
+                <div class="ui-tabs">
+                  <span class="on">Strategy lab</span>
+                  <span class="off">Chart backtest</span>
+                </div>
+                <div class="status"><span class="dot"></span> Backend: Connected</div>
+              </div>
+            </div>
+            <div class="ui-grid-2">
+              <div class="ui-panel">
+                <h3>Strategy builder</h3>
+                <span class="ui-label">Ticker</span>
+                <span class="ui-input">AAPL</span>
+                <span class="ui-label">Exploratory date</span>
+                <span class="ui-input">2024-06-03</span>
+                <span class="ui-btn ui-btn-amber">Exploratory Day</span>
+                <span class="ui-btn ui-btn-violet">Commit In-Sample</span>
+              </div>
+              <div class="ui-panel">
+                <h3>Results</h3>
+                <div class="ui-metric">
+                  <div><span class="ui-label">Net P&amp;L</span><strong>+$124.50</strong></div>
+                  <div><span class="ui-label">Max drawdown</span><strong>−2.1%</strong></div>
+                </div>
+                <p style="margin:0.5rem 0 0;color:#94a3b8;font-size:0.68rem">Exploratory — not evidence of edge</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Figure 1 — TapeReplay home screen with Strategy lab and results panels</figcaption>
+      </figure>
+
+      <h2>What you need</h2>
+      <ul>
+        <li><strong>Installed app</strong> — DMG/NSIS from a release, or run from source with <code>make dev</code>.</li>
+        <li><strong>Backend running</strong> — the green dot in the header means the API on port 5180 is healthy.</li>
+        <li><strong>Minute bar data</strong> — either mock data (default) or your own SQLite cache from Polygon recording.</li>
+      </ul>
+
+      <h2>First launch checklist</h2>
+      <ol class="steps">
+        <li>
+          <strong>Wait for “Backend: Connected”</strong> — on first launch the .NET API may take a few seconds.
+          If it stays amber, restart the app or run <code>make dev</code> from a terminal to see errors.
+        </li>
+        <li>
+          <strong>Try mock mode</strong> — out of the box, <code>UseMockProvider: true</code> serves synthetic bars
+          so you can click <em>Exploratory Day</em> without a Polygon key.
+        </li>
+        <li>
+          <strong>Read the honesty rules</strong> — a single green day is not proof. See
+          <a href="honesty.html">Honesty by design</a> before trusting any number.
+        </li>
+        <li>
+          <strong>Record real data</strong> — when ready, add a Polygon key and run
+          <code>make record</code>. See <a href="collecting-data.html">Collecting data</a>.
+        </li>
+        <li>
+          <strong>Visualize a day</strong> — open <a href="chart-backtest.html">Chart backtest</a>, pick a ticker and
+          date with stored bars, run ORB or PMH, and compare to perfect hindsight.
+        </li>
+      </ol>
+
+      <div class="callout ok">
+        <strong>Tip:</strong> Use the header tabs to switch between <em>Strategy lab</em> (train/test workflow) and
+        <em>Chart backtest</em> (intraday candlesticks with trade markers).
+      </div>
+
+      <h2>Development quickstart</h2>
+      <p>From the repo root:</p>
+      <pre>make install   # first time
+make dev       # API + Vite + Electron</pre>
+
+      <p>Polygon API key (never commit): copy <code>backend/appsettings.Development.local.json.example</code>
+      to <code>backend/appsettings.Development.local.json</code> and set your key.</p>
+
+      <h2>Where to go next</h2>
+      <table>
+        <thead>
+          <tr><th>Goal</th><th>Guide</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Commit / evaluate a strategy properly</td><td><a href="strategy-lab.html">Strategy lab</a></td></tr>
+          <tr><td>Candlesticks + ORB/PMH markers</td><td><a href="chart-backtest.html">Chart backtest</a></td></tr>
+          <tr><td>Pull minute bars from Polygon</td><td><a href="collecting-data.html">Collecting data</a></td></tr>
+          <tr><td>Installers &amp; JS patches</td><td><a href="updates.html">Updates &amp; install</a></td></tr>
+        </tbody>
+      </table>
+    </main>
+  </div>
+</body>
+</html>

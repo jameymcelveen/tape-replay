@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -128,6 +128,15 @@ function registerIpc() {
     ...getPatchInfo(),
     lastUpdateResult: lastPatchResult,
   }));
+
+  ipcMain.handle('tapereplay:open-external', async (_event, url) => {
+    if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+      throw new Error('Invalid URL');
+    }
+
+    await shell.openExternal(url);
+    return true;
+  });
 }
 
 app.whenReady().then(async () => {

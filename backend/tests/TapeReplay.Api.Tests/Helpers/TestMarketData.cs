@@ -56,6 +56,27 @@ internal sealed class InMemoryMarketDataRepository : IMarketDataRepository
         return Task.FromResult<IReadOnlyList<Candle>>(rows);
     }
 
+    public Task<IReadOnlyList<Candle>> GetBarsInRangeAsync(
+        string ticker,
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        if (toUtc < fromUtc)
+        {
+            (fromUtc, toUtc) = (toUtc, fromUtc);
+        }
+
+        var rows = _bars
+            .Where(k => k.Key.Ticker == ticker.ToUpperInvariant()
+                        && k.Key.DateTime >= fromUtc
+                        && k.Key.DateTime <= toUtc)
+            .Select(k => k.Value)
+            .OrderBy(c => c.DateTime)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<Candle>>(rows);
+    }
+
     public Task SaveBarsAsync(string ticker, IReadOnlyList<Candle> barsToSave, CancellationToken cancellationToken = default) =>
         UpsertMinuteBarsAsync(barsToSave, cancellationToken);
 

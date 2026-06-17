@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { generateDsl } from '../services/api';
+import HelpLink from './HelpLink';
 
 const defaultConfig = {
   name: 'Daily High Breakout',
@@ -123,6 +124,11 @@ export default function StrategyBuilder({
         <h2 className="text-lg font-semibold text-slate-100">Strategy Builder</h2>
         <p className="mt-1 text-sm text-slate-400">
           Tune on in-sample dates, commit, then score on out-of-sample. Single-day runs are exploratory only.
+        </p>
+        <p className="mt-2">
+          <HelpLink page="strategyLab">Strategy lab guide →</HelpLink>
+          {' · '}
+          <HelpLink page="honesty">Why exploratory ≠ evidence</HelpLink>
         </p>
       </div>
 

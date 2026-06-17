@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Honesty by design — TapeReplay Help</title>
+  <link rel="stylesheet" href="assets/help.css" />
+</head>
+<body>
+  <div class="layout">
+    <nav>
+      <h1>TapeReplay Help</h1>
+      <p class="tagline">Day trading strategy backtester</p>
+      <ul>
+        <li><a href="index.html">Getting started</a></li>
+        <li><a href="strategy-lab.html">Strategy lab</a></li>
+        <li><a href="chart-backtest.html">Chart backtest</a></li>
+        <li><a href="collecting-data.html">Collecting data</a></li>
+        <li><a href="honesty.html" class="active">Honesty by design</a></li>
+        <li><a href="updates.html">Updates &amp; install</a></li>
+      </ul>
+    </nav>
+    <main>
+      <h1>Honesty by design</h1>
+      <p class="lead">
+        TapeReplay is pessimistic on purpose. It measures whether a strategy survives
+        <strong>after costs</strong> on <strong>data you did not tune against</strong>.
+      </p>
+
+      <figure class="figure">
+        <div class="screenshot">
+          <div class="screenshot-chrome">
+            <span></span><span></span><span></span>
+            <span class="screenshot-title">Out-of-sample evaluation</span>
+          </div>
+          <div class="screenshot-body">
+            <div class="ui-panel" style="margin:0.85rem;border-color:#b45309;background:rgba(120,53,15,0.15)">
+              <p style="margin:0;font-size:0.75rem;color:#fcd34d">⚠ Overfitting warning — in-sample Sharpe was unusually high relative to out-of-sample.</p>
+            </div>
+            <div class="ui-panel" style="margin:0 0.85rem 0.85rem">
+              <h3>Out-of-sample results</h3>
+              <div class="ui-metric">
+                <div><span class="ui-label">Net P&amp;L (after costs)</span><strong style="color:#f87171">−$89.20</strong></div>
+                <div><span class="ui-label">Max drawdown</span><strong>−4.8%</strong></div>
+                <div><span class="ui-label">Win rate</span><strong>42%</strong></div>
+                <div><span class="ui-label">Verdict</span><strong style="color:#94a3b8;font-size:0.75rem">No edge detected</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Figure 5 — Out-of-sample panel with overfitting warning</figcaption>
+      </figure>
+
+      <h2>Core rules</h2>
+      <ol class="steps">
+        <li>
+          <strong>One green day is not evidence.</strong> Exploratory runs are clearly labeled and should
+          never be marketed as proof.
+        </li>
+        <li>
+          <strong>Freeze before you evaluate.</strong> Commit locks strategy parameters. Evaluate uses
+          that frozen config on fresh dates.
+        </li>
+        <li>
+          <strong>Costs are on by default.</strong> Slippage and fees reduce reported P&amp;L — headline
+          numbers are net, not fantasy gross.
+        </li>
+        <li>
+          <strong>No look-ahead.</strong> Entry signals use only information available at bar open
+          (running daily high, not the final daily high).
+        </li>
+      </ol>
+
+      <h2>Sample labels</h2>
+      <table>
+        <thead>
+          <tr><th>Label</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Exploratory</td><td>Single-day dev run — not evidence</td></tr>
+          <tr><td>In-sample</td><td>Training window used to tune (commit)</td></tr>
+          <tr><td>Out-of-sample</td><td>Held-out window — headline metrics</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Chart backtest vs Strategy lab</h2>
+      <p>
+        <strong>Chart backtest</strong> shows intraday ORB/PMH against a perfect-hindsight ceiling —
+        great for intuition, not a substitute for commit/evaluate.
+      </p>
+      <p>
+        <strong>Strategy lab</strong> is the proper train/test workflow for the daily-high-breakout DSL engine.
+      </p>
+
+      <div class="callout ok">
+        <strong>Healthy workflow:</strong> exploratory → commit in-sample → evaluate out-of-sample →
+        only then decide if the strategy deserves more data or live scrutiny.
+      </div>
+    </main>
+  </div>
+</body>
+</html>

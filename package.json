@@ -2,7 +2,7 @@
   "name": "tape-replay",
   "version": "0.1.0",
   "tapereplay": {
-    "patchVersion": "0.1.0"
+    "patchVersion": "0.1.1"
   },
   "private": true,
   "description": "Day trading strategy backtester (Electron + React + .NET)",

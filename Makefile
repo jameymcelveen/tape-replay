@@ -1,7 +1,11 @@
 # TapeReplay — Electron + React + .NET
 # Single-app bundle: self-contained .NET backend + Vite frontend + Electron shell
 
-.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist publish-data record-overnight verify-data
+.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist publish-data record record-overnight verify-data
+
+TICKERS   ?= EDHL,CCHH,CAST,VSME,JRSH
+DATE_FROM ?= 2026-06-11
+DATE_TO   ?= 2026-06-17
 
 BACKEND_PROJECT := backend/TapeReplay.Api.csproj
 TEST_PROJECT    := backend/tests/TapeReplay.Api.Tests/TapeReplay.Api.Tests.csproj
@@ -108,7 +112,11 @@ cdn-dist: ## Build dist/ for surge deploy (PATCH=0.1.1 SURGE_DOMAIN=foo.surge.sh
 publish-data: ## Export data partitions to publish/data/ (backend must be running)
 	curl -sf -X POST http://localhost:5180/api/data/publish | (command -v jq >/dev/null && jq . || cat)
 
-record-overnight: ## Queue + record matt-five tickers (backend must be running)
+record: ## Pull minute bars from Polygon (backend must be running; TICKERS=... DATE_FROM=... DATE_TO=...)
+	chmod +x scripts/record.sh
+	./scripts/record.sh "$(TICKERS)" "$(DATE_FROM)" "$(DATE_TO)"
+
+record-overnight: ## Same as record with progress rounds (matt-five defaults; RECORD_DATE_FROM/TO override)
 	chmod +x scripts/overnight-record.sh
 	./scripts/overnight-record.sh
 

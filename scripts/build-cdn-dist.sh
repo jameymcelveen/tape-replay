@@ -52,6 +52,13 @@ ZIP_PATH="$DIST_DIR/$ZIP_NAME"
 rm -f "$ZIP_PATH"
 (cd "$ROOT/frontend/dist" && zip -r -q "$ZIP_PATH" .)
 
+echo "Copying help site to dist/help/..."
+rm -rf "$DIST_DIR/help"
+mkdir -p "$DIST_DIR/help"
+cp -R "$ROOT/docs/help/." "$DIST_DIR/help/"
+# Remove dev-only partials if present
+rm -rf "$DIST_DIR/help/partials"
+
 if command -v shasum >/dev/null 2>&1; then
   SHA256="$(shasum -a 256 "$ZIP_PATH" | awk '{print $1}')"
 elif command -v sha256sum >/dev/null 2>&1; then
@@ -98,6 +105,7 @@ cat <<EOF
 CDN dist ready: $DIST_DIR/
   manifest.json
   $ZIP_NAME
+  help/           (static documentation)
   SHA256: $SHA256
 
 cdnBaseUrl: $CDN_BASE
