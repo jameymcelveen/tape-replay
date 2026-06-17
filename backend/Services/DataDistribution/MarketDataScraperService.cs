@@ -36,16 +36,11 @@ public sealed class MarketDataScraperService(
 
             if (bars.Count == 0)
             {
-                if (TradingCalendar.IsWeekend(cell.Date))
-                {
-                    await coverageRepository.MarkMinuteSkippedAsync(cell.Ticker, cell.Date, cancellationToken);
-                    logger.LogInformation("Skipped weekend {Ticker} {Date}", cell.Ticker, cell.Date);
-                }
-                else
-                {
-                    logger.LogWarning("No bars returned for {Ticker} {Date}; leaving Pending.", cell.Ticker, cell.Date);
-                }
-
+                await coverageRepository.MarkMinuteSkippedAsync(cell.Ticker, cell.Date, cancellationToken);
+                logger.LogInformation(
+                    "Skipped {Ticker} {Date}: no bars returned from provider.",
+                    cell.Ticker,
+                    cell.Date);
                 continue;
             }
 

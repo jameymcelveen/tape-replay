@@ -1,7 +1,7 @@
 # TapeReplay — Electron + React + .NET
 # Single-app bundle: self-contained .NET backend + Vite frontend + Electron shell
 
-.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist publish-data
+.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist publish-data record-overnight verify-data
 
 BACKEND_PROJECT := backend/TapeReplay.Api.csproj
 TEST_PROJECT    := backend/tests/TapeReplay.Api.Tests/TapeReplay.Api.Tests.csproj
@@ -107,6 +107,14 @@ cdn-dist: ## Build dist/ for surge deploy (PATCH=0.1.1 SURGE_DOMAIN=foo.surge.sh
 
 publish-data: ## Export data partitions to publish/data/ (backend must be running)
 	curl -sf -X POST http://localhost:5180/api/data/publish | (command -v jq >/dev/null && jq . || cat)
+
+record-overnight: ## Queue + record matt-five tickers (backend must be running)
+	chmod +x scripts/overnight-record.sh
+	./scripts/overnight-record.sh
+
+verify-data: ## Show bar counts for EDHL,CCHH,CAST,VSME,JRSH in local SQLite
+	chmod +x scripts/verify-data.sh
+	./scripts/verify-data.sh backend/tapereplay.db
 
 run: stage ## Run the production Electron shell locally (unbundled)
 	npm start

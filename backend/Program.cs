@@ -34,17 +34,7 @@ builder.Services.AddCors(options =>
 });
 
 var dataDir = Environment.GetEnvironmentVariable("TAPEREPLAY_DATA_DIR");
-if (!string.IsNullOrWhiteSpace(dataDir))
-{
-    Directory.CreateDirectory(dataDir);
-}
-
-var dbFileName = string.IsNullOrWhiteSpace(dataDir)
-    ? "tapereplay.db"
-    : Path.Combine(dataDir, "tapereplay.db");
-
-var connectionString = builder.Configuration.GetConnectionString("Default")
-    ?? $"Data Source={dbFileName}";
+var connectionString = ResolveSqliteConnectionString(builder.Configuration, builder.Environment.ContentRootPath, dataDir);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
@@ -148,3 +138,37 @@ app.MapControllers();
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
+
+static string ResolveSqliteConnectionString(IConfiguration configuration, string contentRootPath, string? dataDir)
+{
+    if (!string.IsNullOrWhiteSpace(dataDir))
+    {
+        Directory.CreateDirectory(dataDir);
+        return $"Data Source={Path.Combine(dataDir, "tapereplay.db")}";
+    }
+
+    var configured = configuration.GetConnectionString("Default");
+    if (!string.IsNullOrWhiteSpace(configured))
+    {
+        return ResolveRelativeSqlitePath(configured, contentRootPath);
+    }
+
+    return $"Data Source={Path.Combine(contentRootPath, "tapereplay.db")}";
+}
+
+static string ResolveRelativeSqlitePath(string connectionString, string contentRootPath)
+{
+    const string prefix = "Data Source=";
+    if (!connectionString.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+    {
+        return connectionString;
+    }
+
+    var path = connectionString[prefix.Length..].Trim();
+    if (Path.IsPathRooted(path))
+    {
+        return connectionString;
+    }
+
+    return $"{prefix}{Path.Combine(contentRootPath, path)}";
+}

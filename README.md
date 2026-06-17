@@ -126,6 +126,14 @@ SQLite (`tapereplay.db`) and `publish/data/` are gitignored — collected data n
 
 See [docs/data-distribution.md](docs/data-distribution.md) for subscriber sync and partition details.
 
+### Verify data is loaded
+
+```bash
+make verify-data
+```
+
+DB path in dev: `backend/tapereplay.db` (gitignored). Run backtests with tickers **EDHL, CCHH, CAST, VSME, JRSH** and dates **2026-06-11 through 2026-06-16**.
+
 ## Why this tool is pessimistic by design
 
 TapeReplay measures whether a strategy survives **after costs** on **data you did not tune against**. A single green day is not evidence. See [docs/honesty.md](docs/honesty.md) for train/test split, cost defaults, metrics, and the look-ahead contract.
