@@ -9,6 +9,11 @@ using TapeReplay.Api.Services.DataDistribution;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile(
+    $"appsettings.{builder.Environment.EnvironmentName}.local.json",
+    optional: true,
+    reloadOnChange: true);
+
 builder.WebHost.UseUrls("http://localhost:5180");
 
 builder.Services.AddControllers()

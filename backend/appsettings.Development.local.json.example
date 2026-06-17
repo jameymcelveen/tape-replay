@@ -1,0 +1,23 @@
+{
+  "Polygon": {
+    "ApiKey": "YOUR_POLYGON_KEY_HERE"
+  },
+  "MarketData": {
+    "UseMockProvider": false
+  },
+  "DataDistribution": {
+    "Role": "Both",
+    "SyncOnLaunch": false,
+    "ScraperEnabled": true
+  },
+  "Recording": {
+    "Jobs": [
+      {
+        "label": "local-test",
+        "tickers": ["AAPL"],
+        "dateFrom": "2024-06-03",
+        "dateTo": "2024-06-07"
+      }
+    ]
+  }
+}

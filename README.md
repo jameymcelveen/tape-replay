@@ -56,22 +56,71 @@ npm run dev:frontend
 npm run dev:electron
 ```
 
-### Polygon API key
+### Polygon API key (local only — never commit)
 
-Set your key in `backend/appsettings.Development.json`:
+Copy the example local config (gitignored):
 
-```json
-{
-  "Polygon": {
-    "ApiKey": "YOUR_KEY_HERE"
-  },
-  "MarketData": {
-    "UseMockProvider": false
-  }
-}
+```bash
+cp backend/appsettings.Development.local.json.example backend/appsettings.Development.local.json
+```
+
+Edit `backend/appsettings.Development.local.json` with your Polygon key and any recording date ranges.  
+**Do not** put keys or job dates in `appsettings.Development.json` — that file is tracked in git.
+
+Alternatively set an environment variable:
+
+```bash
+export Polygon__ApiKey=your_key_here
 ```
 
 With `UseMockProvider: true` (default in `appsettings.json`), the API serves synthetic minute bars so you can test without Polygon.
+
+## Collecting market data (publisher)
+
+Prerequisites: Polygon key in local config, `DataDistribution:Role` = `Both` or `Publisher`, `ScraperEnabled: true`.
+
+### 1. Start the stack
+
+```bash
+make install   # first time
+make dev       # API + UI + Electron
+```
+
+### 2. Queue tickers and dates, then record
+
+Dates go in your **local** config or on the command line — not in the repo.
+
+```bash
+chmod +x scripts/record.sh
+./scripts/record.sh "AAPL,MSFT" 2024-06-03 2024-06-07
+```
+
+Or step by step:
+
+```bash
+curl -X POST http://localhost:5180/api/data/queue-minute \
+  -H 'Content-Type: application/json' \
+  -d '{"tickers":["AAPL"],"dateFrom":"2024-06-03","dateTo":"2024-06-07"}'
+
+curl -X POST http://localhost:5180/api/data/record?batchSize=20
+```
+
+Check coverage:
+
+```bash
+curl 'http://localhost:5180/api/data/coverage/minute?ticker=AAPL&startDate=2024-06-03&endDate=2024-06-07'
+```
+
+### 3. Publish to CDN (optional)
+
+```bash
+make publish-data
+cd publish/data && surge . tapereplay.surge.sh/data
+```
+
+SQLite (`tapereplay.db`) and `publish/data/` are gitignored — collected data never gets committed.
+
+See [docs/data-distribution.md](docs/data-distribution.md) for subscriber sync and partition details.
 
 ## Why this tool is pessimistic by design
 
@@ -96,6 +145,11 @@ TapeReplay measures whether a strategy survives **after costs** on **data you di
 | POST | `/api/backtest/commit` | Freeze strategy + in-sample window |
 | POST | `/api/backtest/evaluate` | Score frozen strategy out-of-sample |
 | GET | `/api/marketdata/{ticker}/{date}` | Load or fetch minute bars |
+| POST | `/api/data/queue-minute` | Queue tickers + date range for recording |
+| POST | `/api/data/record` | Scrape until pending queue empty |
+| POST | `/api/data/scrape` | Scrape one batch of pending cells |
+| POST | `/api/data/publish` | Export partitions to `publish/data/` |
+| POST | `/api/data/sync` | Import partitions from CDN |
 
 ## Project layout
 

@@ -50,6 +50,66 @@ public sealed class DataDistributionController(
         return Ok(result);
     }
 
+    /// <summary>Queues pending minute coverage cells for one or more tickers over a date range.</summary>
+    [HttpPost("queue-minute")]
+    public async Task<ActionResult<object>> QueueMinute(
+        [FromBody] QueueMinuteRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Tickers.Count == 0)
+        {
+            return BadRequest(new { error = "At least one ticker is required." });
+        }
+
+        if (request.DateTo < request.DateFrom)
+        {
+            return BadRequest(new { error = "dateTo must be on or after dateFrom." });
+        }
+
+        var queued = 0;
+        foreach (var ticker in request.Tickers.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            for (var date = request.DateFrom; date <= request.DateTo; date = date.AddDays(1))
+            {
+                if (await coverageRepository.IsMinuteDoneAsync(ticker, date, cancellationToken))
+                {
+                    continue;
+                }
+
+                await coverageRepository.EnsureMinutePendingAsync(ticker, date, cancellationToken);
+                queued++;
+            }
+        }
+
+        return Ok(new { queued, tickers = request.Tickers.Count, dateFrom = request.DateFrom, dateTo = request.DateTo });
+    }
+
+    /// <summary>Runs scrape batches until no pending cells remain or maxRounds is hit.</summary>
+    [HttpPost("record")]
+    public async Task<ActionResult<object>> Record(
+        [FromQuery] int batchSize = 20,
+        [FromQuery] int maxRounds = 500,
+        CancellationToken cancellationToken = default)
+    {
+        var totalRecorded = 0;
+        var rounds = 0;
+
+        while (rounds < maxRounds)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var recorded = await scraper.ScrapePendingAsync(batchSize, cancellationToken);
+            rounds++;
+            totalRecorded += recorded;
+
+            if (recorded == 0)
+            {
+                break;
+            }
+        }
+
+        return Ok(new { totalRecorded, rounds, completed = rounds < maxRounds || totalRecorded == 0 });
+    }
+
     /// <summary>Runs the scraper for pending coverage cells.</summary>
     [HttpPost("scrape")]
     public async Task<ActionResult<object>> Scrape([FromQuery] int batchSize = 20, CancellationToken cancellationToken = default)

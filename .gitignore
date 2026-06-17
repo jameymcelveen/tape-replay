@@ -21,3 +21,4 @@ tapereplay.db-wal
 *.user
 .env
 appsettings.*.local.json
+recording.local.json
