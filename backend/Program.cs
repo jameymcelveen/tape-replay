@@ -52,6 +52,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<DataDistributionOptions>(
     builder.Configuration.GetSection(DataDistributionOptions.SectionName));
 
+builder.Services.Configure<RecordingJobOptions>(
+    builder.Configuration.GetSection(RecordingJobOptions.SectionName));
+
 builder.Services.AddHttpClient("DataCdn", client =>
 {
     client.Timeout = TimeSpan.FromMinutes(10);
@@ -85,6 +88,7 @@ builder.Services.AddScoped<PartitionImportService>();
 builder.Services.AddScoped<DataPublisherService>();
 builder.Services.AddScoped<DataSubscriberService>();
 builder.Services.AddScoped<MarketDataScraperService>();
+builder.Services.AddScoped<RecordingStartupService>();
 builder.Services.AddScoped<MarketDataService>();
 
 var app = builder.Build();
@@ -117,6 +121,24 @@ if (distributionOptions.SyncOnLaunch && distributionOptions.CanSubscribe()
         {
             var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("DataSync");
             logger.LogError(ex, "Launch data sync failed.");
+        }
+    });
+}
+
+if (distributionOptions.IsScraperEnabled())
+{
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            await using var scope = app.Services.CreateAsyncScope();
+            var recording = scope.ServiceProvider.GetRequiredService<RecordingStartupService>();
+            await recording.RunConfiguredJobsAsync();
+        }
+        catch (Exception ex)
+        {
+            var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("RecordingStartup");
+            logger.LogError(ex, "Configured recording jobs failed.");
         }
     });
 }

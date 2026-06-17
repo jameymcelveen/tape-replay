@@ -105,11 +105,15 @@ curl -X POST http://localhost:5180/api/data/queue-minute \
 curl -X POST http://localhost:5180/api/data/record?batchSize=20
 ```
 
-Check coverage:
+Jobs in `appsettings.Development.local.json` run automatically on startup when `runOnStartup` is true (restart `make dev` after editing).
+
+Check coverage (pretty-print with jq):
 
 ```bash
-curl 'http://localhost:5180/api/data/coverage/minute?ticker=AAPL&startDate=2024-06-03&endDate=2024-06-07'
+curl -s 'http://localhost:5180/api/data/coverage/minute?ticker=EDHL&startDate=2026-06-11&endDate=2026-06-15' | jq .
 ```
+
+Status values: `Done` (recorded), `Pending` (queued), `Skipped` (weekend).
 
 ### 3. Publish to CDN (optional)
 

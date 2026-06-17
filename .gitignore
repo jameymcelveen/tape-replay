@@ -5,6 +5,7 @@ build/*
 !build/.gitkeep
 artifacts/
 publish/data/
+backend/publish/
 release/
 frontend/dist/
 backend/bin/

@@ -23,6 +23,8 @@ public interface ICoverageRepository
         CoverageProvenance provenance,
         CancellationToken cancellationToken = default);
 
+    Task MarkMinuteSkippedAsync(string ticker, DateOnly date, CancellationToken cancellationToken = default);
+
     Task MarkDailyDoneAsync(
         DateOnly date,
         CoverageProvenance provenance,

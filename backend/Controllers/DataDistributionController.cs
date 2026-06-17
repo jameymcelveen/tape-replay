@@ -71,6 +71,12 @@ public sealed class DataDistributionController(
         {
             for (var date = request.DateFrom; date <= request.DateTo; date = date.AddDays(1))
             {
+                if (!TradingCalendar.IsTradingDay(date))
+                {
+                    await coverageRepository.MarkMinuteSkippedAsync(ticker, date, cancellationToken);
+                    continue;
+                }
+
                 if (await coverageRepository.IsMinuteDoneAsync(ticker, date, cancellationToken))
                 {
                     continue;

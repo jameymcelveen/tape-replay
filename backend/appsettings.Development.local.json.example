@@ -11,12 +11,13 @@
     "ScraperEnabled": true
   },
   "Recording": {
-    "Jobs": [
+    "runOnStartup": true,
+    "jobs": [
       {
         "label": "local-test",
-        "tickers": ["AAPL"],
-        "dateFrom": "2024-06-03",
-        "dateTo": "2024-06-07"
+        "tickers": ["EDHL", "CCHH", "CAST", "VSME", "JRSH"],
+        "dateFrom": "2026-06-11",
+        "dateTo": "2026-06-15"
       }
     ]
   }

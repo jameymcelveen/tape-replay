@@ -6,5 +6,6 @@ namespace TapeReplay.Api.Models.DataDistribution;
 public enum CoverageStatus
 {
     Pending,
-    Done
+    Done,
+    Skipped
 }

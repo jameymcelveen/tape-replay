@@ -64,6 +64,9 @@ internal static class TestMarketDataServiceFactory
         public Task MarkMinuteDoneAsync(string ticker, DateOnly date, CoverageProvenance provenance, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
+        public Task MarkMinuteSkippedAsync(string ticker, DateOnly date, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public Task MarkDailyDoneAsync(DateOnly date, CoverageProvenance provenance, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 

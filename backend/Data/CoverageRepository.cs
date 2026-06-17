@@ -91,6 +91,32 @@ public sealed class CoverageRepository(AppDbContext dbContext) : ICoverageReposi
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task MarkMinuteSkippedAsync(string ticker, DateOnly date, CancellationToken cancellationToken = default)
+    {
+        var normalized = ticker.ToUpperInvariant();
+        var cell = await dbContext.TickerMinuteCoverage
+            .FirstOrDefaultAsync(c => c.Ticker == normalized && c.Date == date, cancellationToken);
+
+        if (cell is null)
+        {
+            dbContext.TickerMinuteCoverage.Add(new TickerMinuteCoverageEntity
+            {
+                Ticker = normalized,
+                Date = date,
+                Status = CoverageStatus.Skipped,
+                Provenance = CoverageProvenance.Api,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            cell.Status = CoverageStatus.Skipped;
+            cell.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task MarkDailyDoneAsync(
         DateOnly date,
         CoverageProvenance provenance,
