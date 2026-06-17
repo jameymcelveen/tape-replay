@@ -1,6 +1,8 @@
 {
   "Polygon": {
-    "ApiKey": "YOUR_POLYGON_KEY_HERE"
+    "ApiKey": "YOUR_POLYGON_KEY_HERE",
+    "MaxCallsPerMinute": 5,
+    "BackoffSecondsOn429": 60
   },
   "MarketData": {
     "UseMockProvider": false

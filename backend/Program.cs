@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using TapeReplay.Api.Data;
 using TapeReplay.Api.Interfaces;
 using TapeReplay.Api.Models.DataDistribution;
+using TapeReplay.Api.Models;
 using TapeReplay.Api.Services;
 using TapeReplay.Api.Services.DataDistribution;
 
@@ -58,6 +59,10 @@ builder.Services.AddScoped<IDataPartitionStateRepository, DataPartitionStateRepo
 var apiKey = builder.Configuration["Polygon:ApiKey"];
 var useMockData = builder.Configuration.GetValue<bool>("MarketData:UseMockProvider")
     || string.IsNullOrWhiteSpace(apiKey);
+
+builder.Services.Configure<PolygonOptions>(builder.Configuration.GetSection(PolygonOptions.SectionName));
+builder.Services.AddSingleton<PolygonRateLimiter>();
+
 if (useMockData)
 {
     builder.Services.AddSingleton<IMarketDataProvider, MockMarketDataProvider>();
