@@ -1,4 +1,8 @@
-import { DEFAULT_DATA_FROM, DEFAULT_DATA_TO, DEFAULT_TICKERS } from '../config/strategyDefaults';
+import {
+  DEFAULT_PULL_FROM,
+  DEFAULT_PULL_TO,
+  DEFAULT_TICKERS,
+} from '../config/strategyDefaults';
 import { enumerateTradingDays } from './tradingCalendar';
 
 /**
@@ -35,7 +39,7 @@ export function buildDefaultPullRows() {
   return DEFAULT_TICKERS.map((ticker) => ({
     id: crypto.randomUUID(),
     ticker,
-    dateFrom: DEFAULT_DATA_FROM,
-    dateTo: DEFAULT_DATA_TO,
+    dateFrom: DEFAULT_PULL_FROM,
+    dateTo: DEFAULT_PULL_TO,
   }));
 }

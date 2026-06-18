@@ -1,7 +1,7 @@
 # TapeReplay — Electron + React + .NET
 # Single-app bundle: self-contained .NET backend + Vite frontend + Electron shell
 
-.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist deploy publish-data record record-overnight verify-data
+.PHONY: help install clean dev dev-ui demo demo-install demo-data-pull demo-overview demo-strategy demo-chart demo-chart-heatmap build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist deploy publish-data record record-overnight verify-data
 
 TICKERS   ?= EDHL,CCHH,CAST,VSME,JRSH
 DATE_FROM ?= 2026-06-11
@@ -64,6 +64,31 @@ clean: ## Remove build artifacts and release output (repo-local paths only)
 
 dev: ## Run backend, Vite, and Electron in development mode
 	npm run dev
+
+dev-ui: ## Run backend + Vite only (for browser demos at http://localhost:5173)
+	npm run dev:ui
+
+demo-install: ## Install Playwright Chromium for showcase scripts
+	npm run demo:install
+
+demo-preflight: ## Verify :5173 and :5180 are up before running a demo
+	chmod +x scripts/demo-preflight.sh
+	./scripts/demo-preflight.sh
+
+demo-data-pull: demo-preflight ## Headed demo: Data pull view (pre-filled DB, human pace)
+	npm run demo:data-pull
+
+demo-overview: demo-preflight ## Headed demo: Exploratory overview heatmap
+	npm run demo:overview
+
+demo-strategy: demo-preflight ## Headed demo: Strategy lab exploratory run
+	npm run demo:strategy
+
+demo-chart: demo-preflight ## Headed demo: Chart backtest candlesticks
+	npm run demo:chart
+
+demo-chart-heatmap: demo-preflight ## Headed demo: Chart heatmap coverage/performance
+	npm run demo:chart-heatmap
 
 build-frontend: ## Build React frontend for production
 	npm run build:frontend

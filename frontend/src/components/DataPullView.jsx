@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import PacManProgress from './PacManProgress';
 import HelpLink from './HelpLink';
 import { fetchMinuteCoverage, queueMinute, scrapeData } from '../services/api';
+import { DEFAULT_PULL_FROM, DEFAULT_PULL_TO } from '../config/strategyDefaults';
 import { buildDefaultPullRows, computeCoveragePercent } from '../utils/coverageProgress';
 
 const inputClass =
@@ -11,8 +12,8 @@ function emptyRow() {
   return {
     id: crypto.randomUUID(),
     ticker: '',
-    dateFrom: '2026-04-01',
-    dateTo: '2026-06-18',
+    dateFrom: DEFAULT_PULL_FROM,
+    dateTo: DEFAULT_PULL_TO,
   };
 }
 

@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import ChartBacktestView from './ChartBacktestView';
+import ExploratoryOverviewGrid, { indexExploratoryRows } from './ExploratoryOverviewGrid';
 import HelpLink from './HelpLink';
 import { fetchExploratoryGrid } from '../services/api';
 import { DEFAULT_DATA_FROM, DEFAULT_DATA_TO, DEFAULT_TICKERS } from '../config/strategyDefaults';
-import { formatMoney, mapNetPnlToColor } from '../utils/exploratoryHeatmapColors';
-import { isMonthStart, monthLabel } from '../utils/tradingCalendar';
-
-const CELL = 14;
+import { formatMoney } from '../utils/exploratoryHeatmapColors';
 
 export default function ExploratoryHeatmapView({
   strategyConfig,
@@ -25,7 +23,6 @@ export default function ExploratoryHeatmapView({
 
   useEffect(() => {
     loadGrid().catch((err) => setError(err.message));
-    // Reload when strategy or range changes.
   }, [from, to, strategyConfig, startingCapitalUsd]);
 
   async function loadGrid() {
@@ -47,52 +44,27 @@ export default function ExploratoryHeatmapView({
     [grid],
   );
 
-  const { cells, totals } = useMemo(() => {
+  const displayRows = useMemo(() => {
+    const indexed = indexExploratoryRows(grid?.rows);
+    if (tickerFilter === 'ALL') {
+      return indexed;
+    }
+
+    return indexed.filter((row) => row.ticker === tickerFilter);
+  }, [grid, tickerFilter]);
+
+  const totals = useMemo(() => {
     if (!grid) {
-      return { cells: {}, totals: null };
+      return null;
     }
 
     if (tickerFilter === 'ALL') {
-      const byDate = {};
-      for (const day of tradingDays) {
-        byDate[day] = {
-          date: day,
-          hasData: false,
-          traded: false,
-          netTotalPnL: 0,
-          tradeCount: 0,
-        };
-      }
-
-      for (const row of grid.rows ?? []) {
-        for (const cell of row.days ?? []) {
-          const date = cell.date;
-          const bucket = byDate[date];
-          if (!bucket) {
-            continue;
-          }
-
-          if (cell.hasData) {
-            bucket.hasData = true;
-          }
-
-          if (cell.traded) {
-            bucket.traded = true;
-          }
-
-          bucket.netTotalPnL += cell.netTotalPnL ?? 0;
-          bucket.tradeCount += cell.tradeCount ?? 0;
-        }
-      }
-
-      return { cells: byDate, totals: grid.totals };
+      return grid.totals;
     }
 
     const row = (grid.rows ?? []).find((r) => r.ticker === tickerFilter);
-    const byDate = Object.fromEntries((row?.days ?? []).map((cell) => [cell.date, cell]));
-    const rowTotals = computeRowTotals(row?.days ?? []);
-    return { cells: byDate, totals: rowTotals };
-  }, [grid, tickerFilter, tradingDays]);
+    return computeRowTotals(row?.days ?? []);
+  }, [grid, tickerFilter]);
 
   if (drillDown) {
     return (
@@ -136,7 +108,7 @@ export default function ExploratoryHeatmapView({
           <div>
             <h2 className="text-lg font-semibold">Strategy overview</h2>
             <p className="mt-1 text-sm text-slate-400">
-              {strategyConfig.name} across pulled minute data. Net P&amp;L is the headline color scale.
+              {strategyConfig.name} across pulled minute data. One row per ticker, net P&amp;L color scale.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -149,9 +121,9 @@ export default function ExploratoryHeatmapView({
               <input type="date" className="mt-1 block rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" value={to} onChange={(e) => setTo(e.target.value)} />
             </label>
             <label className="block text-sm">
-              <span className="text-slate-400">Ticker</span>
+              <span className="text-slate-400">Show</span>
               <select className="mt-1 block rounded-lg border border-slate-600 bg-slate-950 px-3 py-2" value={tickerFilter} onChange={(e) => setTickerFilter(e.target.value)}>
-                <option value="ALL">All tickers (aggregated)</option>
+                <option value="ALL">All tickers</option>
                 {tickers.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
@@ -182,49 +154,16 @@ export default function ExploratoryHeatmapView({
         )}
       </section>
 
-      <section className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-        <div className="mb-2 flex gap-1">
-          {tradingDays.map((day, index) => (
-            isMonthStart(day, tradingDays[index - 1]) ? (
-              <span
-                key={`m-${day}`}
-                className="text-[10px] text-slate-500"
-                style={{ marginLeft: index * CELL }}
-              >
-                {monthLabel(day)}
-              </span>
-            ) : null
-          ))}
-        </div>
-        <div className="flex">
-          {tradingDays.map((day) => {
-            const cell = cells[day];
-            const color = mapNetPnlToColor(
-              cell?.netTotalPnL,
-              cell?.hasData,
-              cell?.traded,
-            );
-            const drillTicker = resolveDrillTicker(grid, tickers, tickerFilter, day);
-            return (
-              <button
-                key={day}
-                type="button"
-                title={buildTooltip(day, cell)}
-                disabled={!cell?.hasData}
-                className="shrink-0 border border-slate-950/50 p-0 hover:ring-1 hover:ring-slate-400 disabled:cursor-default"
-                style={{ width: CELL, height: CELL, backgroundColor: color }}
-                onClick={() => {
-                  if (cell?.hasData) {
-                    setDrillDown({ ticker: drillTicker, date: day });
-                  }
-                }}
-              />
-            );
-          })}
-        </div>
-        <p className="mt-3 text-xs text-slate-500">
-          Click a day with data to open the candlestick chart. Chart markers use ORB/PMH rules, not the DSL overview strategy.
-        </p>
+      <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+        {grid ? (
+          <ExploratoryOverviewGrid
+            tradingDays={tradingDays}
+            rows={displayRows}
+            onCellClick={({ ticker, date }) => setDrillDown({ ticker, date })}
+          />
+        ) : (
+          <p className="text-sm text-slate-500">Loading grid…</p>
+        )}
       </section>
     </div>
   );
@@ -237,33 +176,6 @@ function Metric({ label, value, emphasis = false }) {
       <dd className={`mt-2 text-lg font-semibold ${emphasis ? 'text-emerald-300' : 'text-slate-100'}`}>{value}</dd>
     </div>
   );
-}
-
-function buildTooltip(day, cell) {
-  if (!cell?.hasData) {
-    return `${day}: no minute data`;
-  }
-
-  if (!cell.traded) {
-    return `${day}: no trades`;
-  }
-
-  return `${day}: net ${formatMoney(cell.netTotalPnL)} (${cell.tradeCount} trades)`;
-}
-
-function resolveDrillTicker(gridData, tickerList, filter, day) {
-  if (filter !== 'ALL') {
-    return filter;
-  }
-
-  for (const row of gridData?.rows ?? []) {
-    const cell = (row.days ?? []).find((d) => d.date === day && d.hasData);
-    if (cell) {
-      return row.ticker;
-    }
-  }
-
-  return tickerList[0];
 }
 
 function computeRowTotals(days) {

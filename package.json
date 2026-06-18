@@ -14,6 +14,13 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:electron": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently -k \"npm run dev:backend\" \"npm run dev:frontend\" \"wait-on http://localhost:5180/api/health http://localhost:5173 && npm run dev:electron\"",
+    "dev:ui": "bash scripts/dev-ui.sh",
+    "demo:install": "playwright install chromium",
+    "demo:data-pull": "node demos/data-pull.mjs",
+    "demo:overview": "node demos/overview.mjs",
+    "demo:strategy": "node demos/strategy.mjs",
+    "demo:chart": "node demos/chart.mjs",
+    "demo:chart-heatmap": "node demos/chart-heatmap.mjs",
     "build:frontend": "npm run build --prefix frontend",
     "build:backend": "dotnet build backend/TapeReplay.Api.csproj -c Release",
     "build": "npm run build:frontend && npm run build:backend",
@@ -107,6 +114,7 @@
     "cross-env": "^10.1.0",
     "electron": "^42.4.0",
     "electron-builder": "^26.0.12",
+    "playwright": "^1.52.0",
     "wait-on": "^9.0.10"
   }
 }
