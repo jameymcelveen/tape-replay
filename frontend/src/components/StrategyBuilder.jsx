@@ -1,20 +1,7 @@
 import { useState } from 'react';
 import { generateDsl } from '../services/api';
+import { defaultStrategyConfig } from '../config/strategyDefaults';
 import HelpLink from './HelpLink';
-
-const defaultConfig = {
-  name: 'Daily High Breakout',
-  entryTrigger: 'PriceBreaksAboveDailyHigh',
-  positionSizeUsd: 1000,
-  stopLossPercent: 1,
-  takeProfitTargets: [
-    { percent: 2, weight: 0.5 },
-    { percent: 4, weight: 0.5 },
-  ],
-  closeAllAt: '14:00',
-  maxDailyLossUsd: 500,
-  maxConcurrentTrades: 3,
-};
 
 export default function StrategyBuilder({
   onRunExploratory,
@@ -22,6 +9,10 @@ export default function StrategyBuilder({
   onEvaluate,
   isLoading,
   commitId,
+  strategyConfig,
+  onStrategyConfigChange,
+  startingCapitalUsd,
+  onStartingCapitalChange,
 }) {
   const [ticker, setTicker] = useState('AAPL');
   const [exploreDate, setExploreDate] = useState('2024-06-03');
@@ -29,21 +20,19 @@ export default function StrategyBuilder({
   const [inSampleEnd, setInSampleEnd] = useState('2024-06-07');
   const [outSampleStart, setOutSampleStart] = useState('2024-06-10');
   const [outSampleEnd, setOutSampleEnd] = useState('2024-06-14');
-  const [startingCapital, setStartingCapital] = useState(25000);
-  const [config, setConfig] = useState(defaultConfig);
+  const config = strategyConfig ?? defaultStrategyConfig;
+  const startingCapital = startingCapitalUsd ?? 25000;
   const [dslPreview, setDslPreview] = useState('');
   const [error, setError] = useState('');
 
   function updateConfig(field, value) {
-    setConfig((current) => ({ ...current, [field]: value }));
+    onStrategyConfigChange?.({ ...config, [field]: value });
   }
 
   function updateTakeProfit(index, field, value) {
-    setConfig((current) => {
-      const targets = [...current.takeProfitTargets];
-      targets[index] = { ...targets[index], [field]: Number(value) };
-      return { ...current, takeProfitTargets: targets };
-    });
+    const targets = [...config.takeProfitTargets];
+    targets[index] = { ...targets[index], [field]: Number(value) };
+    onStrategyConfigChange?.({ ...config, takeProfitTargets: targets });
   }
 
   function buildPayload() {
@@ -149,7 +138,7 @@ export default function StrategyBuilder({
           min="1000"
           className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100"
           value={startingCapital}
-          onChange={(event) => setStartingCapital(event.target.value)}
+          onChange={(event) => onStartingCapitalChange?.(Number(event.target.value))}
         />
       </label>
 

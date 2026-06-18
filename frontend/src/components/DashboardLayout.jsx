@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
 import { HELP_PAGES, openHelp } from '../config/help';
 
+const NAV_ITEMS = [
+  { id: 'strategy', label: 'Strategy lab' },
+  { id: 'data-pull', label: 'Data pull' },
+  { id: 'overview', label: 'Overview' },
+  { id: 'chart', label: 'Chart backtest' },
+  { id: 'chart-heatmap', label: 'Chart heatmap' },
+];
+
 export default function DashboardLayout({ children, backendStatus, view, onViewChange }) {
   const [patchLabel, setPatchLabel] = useState('');
-
   const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
@@ -31,12 +38,28 @@ export default function DashboardLayout({ children, backendStatus, view, onViewC
     }
   }, []);
 
-  const isFullWidthView = view === 'chart' || view === 'heatmap';
+  const isFullWidthView = ['chart', 'chart-heatmap', 'data-pull', 'overview'].includes(view);
+
+  function helpPageForView() {
+    if (view === 'chart' || view === 'chart-heatmap') {
+      return 'chartBacktest';
+    }
+
+    if (view === 'data-pull') {
+      return 'collectingData';
+    }
+
+    if (view === 'overview') {
+      return 'honesty';
+    }
+
+    return 'strategyLab';
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight">TapeReplay</h1>
             <p className="text-sm text-slate-400">
@@ -44,29 +67,18 @@ export default function DashboardLayout({ children, backendStatus, view, onViewC
               {patchLabel && <span className="ml-2 text-slate-500">({patchLabel})</span>}
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <nav className="flex rounded-lg border border-slate-700 p-1 text-sm">
-              <button
-                type="button"
-                className={`rounded-md px-3 py-1.5 ${view === 'strategy' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-                onClick={() => onViewChange('strategy')}
-              >
-                Strategy lab
-              </button>
-              <button
-                type="button"
-                className={`rounded-md px-3 py-1.5 ${view === 'chart' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-                onClick={() => onViewChange('chart')}
-              >
-                Chart backtest
-              </button>
-              <button
-                type="button"
-                className={`rounded-md px-3 py-1.5 ${view === 'heatmap' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-                onClick={() => onViewChange('heatmap')}
-              >
-                Heatmap
-              </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <nav className="flex flex-wrap rounded-lg border border-slate-700 p-1 text-sm" aria-label="Main navigation">
+              {NAV_ITEMS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`rounded-md px-3 py-1.5 ${view === item.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                  onClick={() => onViewChange(item.id)}
+                >
+                  {item.label}
+                </button>
+              ))}
             </nav>
             <div className="relative" data-help-menu>
               <button
@@ -80,7 +92,7 @@ export default function DashboardLayout({ children, backendStatus, view, onViewC
               {helpOpen && (
                 <div className="absolute right-0 z-20 mt-2 w-52 rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl">
                   <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp('index'); setHelpOpen(false); }}>Getting started</button>
-                  <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp(view === 'chart' ? 'chartBacktest' : view === 'heatmap' ? 'chartBacktest' : 'strategyLab'); setHelpOpen(false); }}>{view === 'chart' || view === 'heatmap' ? 'Chart backtest guide' : 'Strategy lab guide'}</button>
+                  <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp(helpPageForView()); setHelpOpen(false); }}>View guide</button>
                   <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp('collectingData'); setHelpOpen(false); }}>Collecting data</button>
                   <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp('honesty'); setHelpOpen(false); }}>Honesty by design</button>
                   <hr className="my-1 border-slate-700" />

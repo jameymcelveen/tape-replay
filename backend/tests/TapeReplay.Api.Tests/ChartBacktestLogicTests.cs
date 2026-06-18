@@ -1,4 +1,3 @@
-using Shouldly;
 using TapeReplay.Api.Models.ChartBacktest;
 using TapeReplay.Api.Services.ChartBacktest;
 using TapeReplay.Api.Services.ChartBacktest.Rules;

@@ -4,6 +4,9 @@ import StrategyBuilder from './components/StrategyBuilder';
 import BacktestResults from './components/BacktestResults';
 import ChartBacktestView from './components/ChartBacktestView';
 import StrategyHeatmapView from './components/StrategyHeatmapView';
+import DataPullView from './components/DataPullView';
+import ExploratoryHeatmapView from './components/ExploratoryHeatmapView';
+import { defaultStrategyConfig } from './config/strategyDefaults';
 import { checkHealth, commitBacktest, evaluateBacktest, runBacktest } from './services/api';
 
 export default function App() {
@@ -13,6 +16,8 @@ export default function App() {
   const [commitId, setCommitId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chartNavigate, setChartNavigate] = useState(null);
+  const [strategyConfig, setStrategyConfig] = useState(defaultStrategyConfig);
+  const [startingCapitalUsd, setStartingCapitalUsd] = useState(25000);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +58,10 @@ export default function App() {
           <StrategyBuilder
             commitId={commitId}
             isLoading={isLoading}
+            strategyConfig={strategyConfig}
+            onStrategyConfigChange={setStrategyConfig}
+            startingCapitalUsd={startingCapitalUsd}
+            onStartingCapitalChange={setStartingCapitalUsd}
             onRunExploratory={(payload) => withLoading(async () => {
               const data = await runBacktest(payload);
               setResult({ mode: 'exploratory', data });
@@ -69,6 +78,15 @@ export default function App() {
           />
           <BacktestResults result={result} />
         </>
+      ) : view === 'data-pull' ? (
+        <DataPullView backendStatus={backendStatus} />
+      ) : view === 'overview' ? (
+        <ExploratoryHeatmapView
+          strategyConfig={strategyConfig}
+          startingCapitalUsd={startingCapitalUsd}
+          isLoading={isLoading}
+          onRun={(action) => withLoading(action)}
+        />
       ) : view === 'chart' ? (
         <ChartBacktestView
           isLoading={isLoading}
@@ -76,7 +94,7 @@ export default function App() {
           navigateRequest={chartNavigate}
           onNavigateHandled={() => setChartNavigate(null)}
         />
-      ) : (
+      ) : view === 'chart-heatmap' ? (
         <StrategyHeatmapView
           isLoading={isLoading}
           onRun={(action) => withLoading(action)}
@@ -85,7 +103,7 @@ export default function App() {
             setView('chart');
           }}
         />
-      )}
+      ) : null}
     </DashboardLayout>
   );
 }

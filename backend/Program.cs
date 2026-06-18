@@ -83,6 +83,7 @@ builder.Services.AddSingleton<IReplayRuleStrategy, OrbReplayStrategy>();
 builder.Services.AddSingleton<IReplayRuleStrategy, PmhReplayStrategy>();
 builder.Services.AddScoped<ChartBacktestService>();
 builder.Services.AddScoped<StrategyHeatmapService>();
+builder.Services.AddScoped<ExploratoryGridService>();
 builder.Services.AddScoped<IStrategyResultRepository, StrategyResultRepository>();
 builder.Services.AddScoped<IBacktestCommitRepository, BacktestCommitRepository>();
 builder.Services.AddScoped<IBacktestHarness, BacktestHarness>();
