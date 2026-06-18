@@ -1,0 +1,45 @@
+---
+description: Never delete or modify files outside the git repo root; safe destructive commands
+alwaysApply: true
+---
+
+# Repo boundary safety (CRITICAL)
+
+## Scope: stay inside the repository
+
+- **Never** create, edit, move, or delete files outside the current project's git repository root.
+- **Never** run shell commands that touch paths outside the repo unless the user explicitly names an absolute path and confirms.
+- When using tools (`Write`, `Delete`, `StrReplace`, terminal `rm`/`mv`/`cp`), resolve paths relative to the workspace root and reject anything that escapes it.
+
+## Destructive commands (`rm`, `make clean`, wildcards)
+
+- **Never** use `rm -rf` with an unquoted variable, empty variable, or glob (`/*`, `$VAR/*`) without a defined repo-root prefix.
+- In Makefiles and shell scripts, every delete must use an **absolute path under `ROOT_DIR`** or a verified relative path inside the repo.
+- If a Makefile variable used in `rm` is undefined, **stop and fix** — do not run the target.
+
+### Incident reference (2026-03)
+
+`make clean` used `$(CDN_DIST_DIR)/*` while `CDN_DIST_DIR` was undefined → expanded to `rm -rf /*` and attempted to delete `/Applications` and other system paths. See `docs/incidents/2026-03-make-clean-rm-rf.md`.
+
+### Required patterns
+
+```makefile
+# ✅ GOOD — repo-root prefix, no bare globs on empty vars
+ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+CDN_DIST_DIR := dist
+rm -rf "$(ROOT_DIR)/$(CDN_DIST_DIR)"
+
+# ❌ FORBIDDEN — empty CDN_DIST_DIR becomes rm -rf /*
+rm -rf $(CDN_DIST_DIR)/*
+```
+
+```bash
+# ✅ GOOD
+rm -rf "${REPO_ROOT}/dist"
+
+# ❌ FORBIDDEN
+rm -rf "$UNDEFINED_VAR"/*
+rm -rf /*
+```
+
+Before proposing or running any destructive command, state the **exact expanded paths** that will be removed.

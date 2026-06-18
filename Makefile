@@ -51,7 +51,9 @@ install: ## Install npm and dotnet dependencies
 
 clean: ## Remove build artifacts and release output (repo-local paths only)
 	@test -n "$(ROOT_DIR)" && test "$(ROOT_DIR)" != "/"
+	@test -f "$(ROOT_DIR)/Makefile" || (echo "clean: refusing — ROOT_DIR is not the repo: $(ROOT_DIR)" && exit 1)
 	@test -n "$(ARTIFACTS_DIR)" && test -n "$(RELEASE_DIR)" && test -n "$(CDN_DIST_DIR)"
+	@test "$(ARTIFACTS_DIR)" != "/" && test "$(CDN_DIST_DIR)" != "/"
 	rm -rf "$(ROOT_DIR)/$(ARTIFACTS_DIR)"
 	rm -rf "$(ROOT_DIR)/$(RELEASE_DIR)"
 	rm -rf "$(ROOT_DIR)/$(CDN_DIST_DIR)"
