@@ -17,7 +17,7 @@
     "build:frontend": "npm run build --prefix frontend",
     "build:backend": "dotnet build backend/TapeReplay.Api.csproj -c Release",
     "build": "npm run build:frontend && npm run build:backend",
-    "start": "electron .",
+    "start": "cross-env NODE_ENV=production electron .",
     "bundle": "electron-builder",
     "bundle:mac": "electron-builder --mac dmg zip",
     "bundle:win": "electron-builder --win nsis zip --x64",

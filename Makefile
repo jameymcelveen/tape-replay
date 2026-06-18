@@ -130,8 +130,8 @@ verify-data: ## Show bar counts for EDHL,CCHH,CAST,VSME,JRSH in local SQLite
 	chmod +x scripts/verify-data.sh
 	./scripts/verify-data.sh backend/tapereplay.db
 
-run: stage ## Run the production Electron shell locally (unbundled)
-	npm start
+run: stage ## Run staged Electron app (built frontend/dist; use make dev for hot reload)
+	NODE_ENV=production npm start
 
 verify-backend: publish-backend ## Smoke-test the published backend binary
 	@$(BACKEND_OUT)/TapeReplay.Api & \

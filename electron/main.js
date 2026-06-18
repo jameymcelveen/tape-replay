@@ -13,7 +13,9 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
-const isDev = !app.isPackaged;
+const isPackaged = app.isPackaged;
+/** Hot-reload via Vite — only when explicitly started through npm run dev. */
+const isViteDev = !isPackaged && process.env.NODE_ENV === 'development';
 
 let backendProcess;
 let mainWindow;
@@ -51,7 +53,7 @@ function waitForBackend(url, timeoutMs = 60000) {
 }
 
 function resolveBackendLaunch() {
-  if (isDev) {
+  if (!isPackaged) {
     return {
       command: 'dotnet',
       args: ['run', '--project', path.join(rootDir, 'backend')],
@@ -88,10 +90,10 @@ function startBackend() {
   backendProcess = spawn(launch.command, launch.args, {
     cwd: launch.cwd,
     env: launch.env,
-    stdio: isDev ? 'inherit' : 'pipe',
+    stdio: !isPackaged ? 'inherit' : 'pipe',
   });
 
-  if (!isDev && backendProcess.stderr) {
+  if (isPackaged && backendProcess.stderr) {
     backendProcess.stderr.on('data', (chunk) => {
       console.error(`[backend] ${chunk.toString()}`);
     });
@@ -115,11 +117,18 @@ async function createWindow() {
     },
   });
 
-  if (isDev) {
+  if (isViteDev) {
     await mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    await mainWindow.loadFile(resolveFrontendIndex(rootDir));
+    const indexPath = resolveFrontendIndex(rootDir);
+    if (!fs.existsSync(indexPath)) {
+      throw new Error(
+        `Frontend build missing at ${indexPath}. Run make build-frontend or make stage first.`,
+      );
+    }
+
+    await mainWindow.loadFile(indexPath);
   }
 }
 
