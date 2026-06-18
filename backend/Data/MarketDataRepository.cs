@@ -183,6 +183,16 @@ public sealed class MarketDataRepository(AppDbContext dbContext) : IMarketDataRe
             .ToList();
     }
 
+    public async Task<IReadOnlyList<string>> GetDistinctTickersWithMinuteDataAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.MarketData
+            .AsNoTracking()
+            .Select(m => m.Ticker)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToListAsync(cancellationToken);
+    }
+
     private static Candle MapToCandle(MarketDataEntity entity) => new()
     {
         Ticker = entity.Ticker,

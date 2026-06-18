@@ -45,6 +45,29 @@ export async function runChartBacktest(payload) {
   });
 }
 
+export async function fetchStrategyHeatmap(payload) {
+  return request('/api/backtest/chart/heatmap', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchMinuteCoverage({ ticker, startDate, endDate } = {}) {
+  const params = new URLSearchParams();
+  if (ticker) {
+    params.set('ticker', ticker);
+  }
+  if (startDate) {
+    params.set('startDate', startDate);
+  }
+  if (endDate) {
+    params.set('endDate', endDate);
+  }
+
+  const query = params.toString();
+  return request(`/api/data/coverage/minute${query ? `?${query}` : ''}`);
+}
+
 export async function commitBacktest(payload) {
   return request('/api/backtest/commit', {
     method: 'POST',

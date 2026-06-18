@@ -68,6 +68,11 @@ public static class MarketSessionClassifier
     /// </summary>
     public static DateOnly GetEasternDate(DateTime utc) => DateOnly.FromDateTime(ToEastern(utc));
 
+    /// <summary>
+    /// Resolves the US Eastern time zone for conversions.
+    /// </summary>
+    public static TimeZoneInfo ResolveEasternTimeZoneForConversion() => ResolveEasternTimeZone();
+
     private static TimeZoneInfo ResolveEasternTimeZone()
     {
         try

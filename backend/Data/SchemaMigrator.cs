@@ -100,5 +100,27 @@ public static class SchemaMigrator
             CREATE UNIQUE INDEX IF NOT EXISTS IX_MarketData_Ticker_DateTime ON MarketData (Ticker, DateTime);
             """,
             cancellationToken);
+
+        await db.Database.ExecuteSqlRawAsync(
+            """
+            CREATE TABLE IF NOT EXISTS strategy_results (
+                Ticker TEXT NOT NULL,
+                Date TEXT NOT NULL,
+                StrategyConfigHash TEXT NOT NULL,
+                HasData INTEGER NOT NULL,
+                Traded INTEGER NOT NULL,
+                PnlPct TEXT NULL,
+                CapturePct TEXT NULL,
+                PnlDollar TEXT NULL,
+                EntryTime TEXT NULL,
+                EntryPrice TEXT NULL,
+                ExitTime TEXT NULL,
+                ExitPrice TEXT NULL,
+                ExitReason TEXT NULL,
+                ComputedAt TEXT NOT NULL,
+                PRIMARY KEY (Ticker, Date, StrategyConfigHash)
+            );
+            """,
+            cancellationToken);
     }
 }

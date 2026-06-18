@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TapeReplay.Api.Models;
+using TapeReplay.Api.Models.ChartBacktest;
 using TapeReplay.Api.Models.DataDistribution;
 
 namespace TapeReplay.Api.Data;
@@ -22,6 +23,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<DataPartitionImportEntity> DataPartitionImports => Set<DataPartitionImportEntity>();
 
     public DbSet<DataPublishLogEntity> DataPublishLogs => Set<DataPublishLogEntity>();
+
+    public DbSet<StrategyResultEntity> StrategyResults => Set<StrategyResultEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -81,5 +84,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         publishLog.Property(e => e.Sha256).HasMaxLength(64).IsRequired();
         publishLog.Property(e => e.Kind).HasConversion<string>().HasMaxLength(16);
         publishLog.HasIndex(e => new { e.Kind, e.PartitionKey }).IsUnique();
+
+        var strategyResults = modelBuilder.Entity<StrategyResultEntity>();
+        strategyResults.ToTable("strategy_results");
+        strategyResults.HasKey(e => new { e.Ticker, e.Date, e.StrategyConfigHash });
+        strategyResults.Property(e => e.Ticker).HasMaxLength(16);
+        strategyResults.Property(e => e.StrategyConfigHash).HasMaxLength(64);
+        strategyResults.Property(e => e.PnlPct).HasPrecision(18, 6);
+        strategyResults.Property(e => e.CapturePct).HasPrecision(18, 6);
+        strategyResults.Property(e => e.PnlDollar).HasPrecision(18, 6);
+        strategyResults.Property(e => e.EntryPrice).HasPrecision(18, 6);
+        strategyResults.Property(e => e.ExitPrice).HasPrecision(18, 6);
     }
 }

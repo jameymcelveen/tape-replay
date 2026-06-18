@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BacktestChart from './BacktestChart';
 import HelpLink from './HelpLink';
 import { runChartBacktest } from '../services/api';
@@ -28,7 +28,7 @@ function formatPct(value) {
   return `${value >= 0 ? '+' : ''}${Number(value).toFixed(2)}%`;
 }
 
-export default function ChartBacktestView({ isLoading, onRun }) {
+export default function ChartBacktestView({ isLoading, onRun, navigateRequest, onNavigateHandled }) {
   const [ticker, setTicker] = useState('VSME');
   const [date, setDate] = useState('2026-06-16');
   const [fromTime, setFromTime] = useState('04:00');
@@ -42,17 +42,80 @@ export default function ChartBacktestView({ isLoading, onRun }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
-  async function handleRun() {
+  useEffect(() => {
+    if (!navigateRequest) {
+      return;
+    }
+
+    const request = navigateRequest;
+    setTicker(request.ticker);
+    setDate(request.date);
+    setRule(request.rule ?? 'orb');
+    setOrMinutes(request.orMinutes ?? 5);
+    setStopPct(request.stopPct ?? 5);
+    setTargetPct(request.targetPct ?? 10);
+    setShares(request.shares ?? 100);
+    setScope(request.scope ?? 'all');
+    setFromTime(request.scope === 'regular' ? '09:30' : '04:00');
+    setToTime(request.scope === 'regular' ? '16:00' : '20:00');
     setError('');
-    const payload = {
-      ticker: ticker.trim().toUpperCase(),
-      from: easternToUtcIso(date, fromTime),
-      to: easternToUtcIso(date, toTime),
+
+    if (request.autoRun) {
+      const payload = buildPayload({
+        ticker: request.ticker,
+        date: request.date,
+        fromTime: request.scope === 'regular' ? '09:30' : '04:00',
+        toTime: request.scope === 'regular' ? '16:00' : '20:00',
+        scope: request.scope ?? 'all',
+        rule: request.rule ?? 'orb',
+        orMinutes: request.orMinutes ?? 5,
+        stopPct: request.stopPct ?? 5,
+        targetPct: request.targetPct ?? 10,
+        shares: request.shares ?? 100,
+      });
+
+      onRun(async () => {
+        const data = await runChartBacktest(payload);
+        setResult(data);
+      }).catch((err) => setError(err.message));
+    }
+
+    onNavigateHandled?.();
+  }, [navigateRequest]);
+
+  function buildPayload(overrides = {}) {
+    const values = {
+      ticker,
+      date,
+      fromTime,
+      toTime,
       scope,
       rule,
-      params: { orMinutes, stopPct, targetPct },
+      orMinutes,
+      stopPct,
+      targetPct,
       shares,
+      ...overrides,
     };
+
+    return {
+      ticker: values.ticker.trim().toUpperCase(),
+      from: easternToUtcIso(values.date, values.fromTime ?? '04:00'),
+      to: easternToUtcIso(values.date, values.toTime ?? '20:00'),
+      scope: values.scope,
+      rule: values.rule,
+      params: {
+        orMinutes: values.orMinutes,
+        stopPct: values.stopPct,
+        targetPct: values.targetPct,
+      },
+      shares: values.shares,
+    };
+  }
+
+  async function handleRun() {
+    setError('');
+    const payload = buildPayload();
 
     await onRun(async () => {
       const data = await runChartBacktest(payload);

@@ -3,6 +3,7 @@ import DashboardLayout from './components/DashboardLayout';
 import StrategyBuilder from './components/StrategyBuilder';
 import BacktestResults from './components/BacktestResults';
 import ChartBacktestView from './components/ChartBacktestView';
+import StrategyHeatmapView from './components/StrategyHeatmapView';
 import { checkHealth, commitBacktest, evaluateBacktest, runBacktest } from './services/api';
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [commitId, setCommitId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [chartNavigate, setChartNavigate] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,10 +69,21 @@ export default function App() {
           />
           <BacktestResults result={result} />
         </>
-      ) : (
+      ) : view === 'chart' ? (
         <ChartBacktestView
           isLoading={isLoading}
           onRun={(action) => withLoading(action)}
+          navigateRequest={chartNavigate}
+          onNavigateHandled={() => setChartNavigate(null)}
+        />
+      ) : (
+        <StrategyHeatmapView
+          isLoading={isLoading}
+          onRun={(action) => withLoading(action)}
+          onOpenChart={(request) => {
+            setChartNavigate(request);
+            setView('chart');
+          }}
         />
       )}
     </DashboardLayout>

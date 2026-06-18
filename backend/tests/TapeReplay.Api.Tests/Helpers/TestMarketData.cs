@@ -130,4 +130,14 @@ internal sealed class InMemoryMarketDataRepository : IMarketDataRepository
             .ToList();
         return Task.FromResult<IReadOnlyList<(int Year, int Month)>>(keys);
     }
+
+    public Task<IReadOnlyList<string>> GetDistinctTickersWithMinuteDataAsync(CancellationToken cancellationToken = default)
+    {
+        var tickers = _bars.Keys
+            .Select(k => k.Ticker)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(t => t, StringComparer.Ordinal)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<string>>(tickers);
+    }
 }

@@ -1,7 +1,7 @@
 # TapeReplay — Electron + React + .NET
 # Single-app bundle: self-contained .NET backend + Vite frontend + Electron shell
 
-.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist publish-data record record-overnight verify-data
+.PHONY: help install clean dev build build-frontend publish-backend stage bundle run test verify-backend installer-mac installer-win installers build-patch cdn-dist deploy publish-data record record-overnight verify-data
 
 TICKERS   ?= EDHL,CCHH,CAST,VSME,JRSH
 DATE_FROM ?= 2026-06-11
@@ -15,6 +15,7 @@ BACKEND_OUT     := $(ARTIFACTS_DIR)/backend
 FRONTEND_DIR    := frontend
 RELEASE_DIR     := release
 CDN_DIST_DIR    := dist
+SURGE_DOMAIN    ?= tapereplay.surge.sh
 CONFIGURATION   ?= Release
 INSTALLER_SCRIPT := ./scripts/build-installer.sh
 
@@ -113,9 +114,18 @@ installers: installer-mac ## Build installer for the current OS (use CI for cros
 
 build-patch: cdn-dist ## Alias for cdn-dist (usage: make build-patch PATCH=0.1.1)
 
-cdn-dist: ## Build dist/ for surge deploy (PATCH=0.1.1 SURGE_DOMAIN=foo.surge.sh)
-	chmod +x scripts/build-cdn-dist.sh scripts/build-patch.sh
-	./scripts/build-cdn-dist.sh $(PATCH)
+cdn-dist: ## Build dist/ for surge deploy (PATCH=0.1.1 SURGE_DOMAIN=foo.surge.sh INCLUDE_INSTALLERS=1)
+	chmod +x scripts/build-cdn-dist.sh scripts/build-patch.sh scripts/generate-cdn-index.mjs
+	SURGE_DOMAIN="$(SURGE_DOMAIN)" INCLUDE_INSTALLERS="$(INCLUDE_INSTALLERS)" PATCH="$(PATCH)" \
+		./scripts/build-cdn-dist.sh $(PATCH)
+
+deploy: cdn-dist ## Build dist/ and publish to Surge (PATCH=... SURGE_DOMAIN=... INCLUDE_INSTALLERS=1)
+	@test -n "$(SURGE_DOMAIN)"
+	@test "$(SURGE_DOMAIN)" != "/"
+	@test -f "$(ROOT_DIR)/$(CDN_DIST_DIR)/index.html" || (echo "deploy: missing $(CDN_DIST_DIR)/index.html" && exit 1)
+	@test -f "$(ROOT_DIR)/$(CDN_DIST_DIR)/manifest.json" || (echo "deploy: missing $(CDN_DIST_DIR)/manifest.json" && exit 1)
+	cd "$(ROOT_DIR)/$(CDN_DIST_DIR)" && npx --yes surge . "$(SURGE_DOMAIN)"
+	@echo "Deployed to https://$(SURGE_DOMAIN)/"
 
 publish-data: ## Export data partitions to publish/data/ (backend must be running)
 	curl -sf -X POST http://localhost:5180/api/data/publish | (command -v jq >/dev/null && jq . || cat)

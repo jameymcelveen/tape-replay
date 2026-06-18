@@ -33,4 +33,6 @@ public interface IMarketDataRepository
     Task<IReadOnlyList<string>> GetMinutePartitionKeysAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<(int Year, int Month)>> GetDailyPartitionKeysAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<string>> GetDistinctTickersWithMinuteDataAsync(CancellationToken cancellationToken = default);
 }

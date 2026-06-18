@@ -31,7 +31,7 @@ export default function DashboardLayout({ children, backendStatus, view, onViewC
     }
   }, []);
 
-  const isChartView = view === 'chart';
+  const isFullWidthView = view === 'chart' || view === 'heatmap';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -60,6 +60,13 @@ export default function DashboardLayout({ children, backendStatus, view, onViewC
               >
                 Chart backtest
               </button>
+              <button
+                type="button"
+                className={`rounded-md px-3 py-1.5 ${view === 'heatmap' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                onClick={() => onViewChange('heatmap')}
+              >
+                Heatmap
+              </button>
             </nav>
             <div className="relative" data-help-menu>
               <button
@@ -73,7 +80,7 @@ export default function DashboardLayout({ children, backendStatus, view, onViewC
               {helpOpen && (
                 <div className="absolute right-0 z-20 mt-2 w-52 rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl">
                   <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp('index'); setHelpOpen(false); }}>Getting started</button>
-                  <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp(view === 'chart' ? 'chartBacktest' : 'strategyLab'); setHelpOpen(false); }}>{view === 'chart' ? 'Chart backtest guide' : 'Strategy lab guide'}</button>
+                  <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp(view === 'chart' ? 'chartBacktest' : view === 'heatmap' ? 'chartBacktest' : 'strategyLab'); setHelpOpen(false); }}>{view === 'chart' || view === 'heatmap' ? 'Chart backtest guide' : 'Strategy lab guide'}</button>
                   <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp('collectingData'); setHelpOpen(false); }}>Collecting data</button>
                   <button type="button" className="block w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800" onClick={() => { openHelp('honesty'); setHelpOpen(false); }}>Honesty by design</button>
                   <hr className="my-1 border-slate-700" />
@@ -93,7 +100,7 @@ export default function DashboardLayout({ children, backendStatus, view, onViewC
         </div>
       </header>
 
-      <main className={`mx-auto grid max-w-7xl gap-6 px-6 py-8 ${isChartView ? 'grid-cols-1' : 'lg:grid-cols-2'}`}>
+      <main className={`mx-auto grid max-w-7xl gap-6 px-6 py-8 ${isFullWidthView ? 'grid-cols-1' : 'lg:grid-cols-2'}`}>
         {children}
       </main>
     </div>

@@ -17,6 +17,7 @@ public sealed class BacktestController(
     IBacktestHarness backtestHarness,
     MarketDataService marketDataService,
     ChartBacktestService chartBacktestService,
+    StrategyHeatmapService strategyHeatmapService,
     IStrategyParser parser) : ControllerBase
 {
     /// <summary>
@@ -82,6 +83,30 @@ public sealed class BacktestController(
         try
         {
             var response = await chartBacktestService.RunAsync(request, cancellationToken);
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Computes strategy performance cells for a ticker-day heatmap grid with per-config caching.
+    /// </summary>
+    [HttpPost("chart/heatmap")]
+    public async Task<ActionResult<StrategyHeatmapResponse>> ChartHeatmap(
+        [FromBody] StrategyHeatmapRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.To < request.From)
+        {
+            return BadRequest(new { error = "'to' must be on or after 'from'." });
+        }
+
+        try
+        {
+            var response = await strategyHeatmapService.RunAsync(request, cancellationToken);
             return Ok(response);
         }
         catch (ArgumentException ex)

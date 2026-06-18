@@ -31,27 +31,16 @@ public sealed class ChartBacktestService(
             request.To,
             cancellationToken);
 
-        var enriched = rawBars
-            .Select(ToEnrichedBar)
-            .Where(b => MarketSessionClassifier.IsInScope(b.Session, b.UtcTime, includeExtended))
-            .ToList();
-
+        var enriched = EnrichBars(rawBars, includeExtended);
         var chartBars = enriched.Select(ToDto).ToList();
+        var evaluation = EvaluateEnrichedDay(enriched, request.Rule, request.Params, request.Shares, includeExtended);
 
         var strategyBars = includeExtended
             ? enriched
             : enriched.Where(b => b.Session == MarketSession.Regular).ToList();
 
         var hindsight = PerfectHindsightCalculator.Compute(strategyBars);
-
-        var rule = request.Rule.Trim().ToLowerInvariant();
-        if (!_strategies.TryGetValue(rule, out var strategy))
-        {
-            throw new ArgumentException($"Unknown rule '{request.Rule}'. Supported: orb, pmh.");
-        }
-
-        var trade = EvaluateFirstTrade(strategy, enriched, request.Params, request.Shares);
-
+        var trade = BuildTradeResult(evaluation);
         var capturePct = hindsight.ProfPerShare is > 0 && trade.PnlPerShare is not null
             ? trade.PnlPerShare / hindsight.ProfPerShare * 100m
             : (decimal?)null;
@@ -65,30 +54,93 @@ public sealed class ChartBacktestService(
         };
     }
 
-    private static StrategyTradeResult EvaluateFirstTrade(
-        IReplayRuleStrategy strategy,
-        IReadOnlyList<EnrichedBar> bars,
+    /// <summary>
+    /// Evaluates strategy performance for one Eastern session day from raw minute bars.
+    /// </summary>
+    public ChartDayEvaluation EvaluateDayBars(
+        IReadOnlyList<Candle> rawBars,
+        string rule,
         ReplayRuleParams parameters,
-        int shares)
+        int shares,
+        string scope)
     {
-        foreach (var dayGroup in bars.GroupBy(b => b.EasternDate).OrderBy(g => g.Key))
+        var includeExtended = string.Equals(scope, "all", StringComparison.OrdinalIgnoreCase);
+        var enriched = EnrichBars(rawBars, includeExtended);
+
+        if (enriched.Count == 0)
         {
-            var dayBars = dayGroup.OrderBy(b => b.UtcTime).ToList();
-            var result = strategy.EvaluateDay(dayBars, parameters, shares);
-            if (result.Taken)
-            {
-                return result;
-            }
+            return new ChartDayEvaluation { HasData = false, Traded = false };
         }
 
-        var lastAttempt = bars
-            .GroupBy(b => b.EasternDate)
-            .OrderBy(g => g.Key)
-            .Select(g => strategy.EvaluateDay(g.OrderBy(b => b.UtcTime).ToList(), parameters, shares))
-            .LastOrDefault();
-
-        return lastAttempt ?? ReplayExitEvaluator.NotTaken("No bars in range.");
+        return EvaluateEnrichedDay(enriched, rule, parameters, shares, includeExtended);
     }
+
+    private static List<EnrichedBar> EnrichBars(IReadOnlyList<Candle> rawBars, bool includeExtended)
+    {
+        return rawBars
+            .Select(ToEnrichedBar)
+            .Where(b => MarketSessionClassifier.IsInScope(b.Session, b.UtcTime, includeExtended))
+            .ToList();
+    }
+
+    private ChartDayEvaluation EvaluateEnrichedDay(
+        IReadOnlyList<EnrichedBar> enriched,
+        string rule,
+        ReplayRuleParams parameters,
+        int shares,
+        bool includeExtended)
+    {
+        if (enriched.Count == 0)
+        {
+            return new ChartDayEvaluation { HasData = false, Traded = false };
+        }
+
+        var ruleKey = rule.Trim().ToLowerInvariant();
+        if (!_strategies.TryGetValue(ruleKey, out var strategy))
+        {
+            throw new ArgumentException($"Unknown rule '{rule}'. Supported: orb, pmh.");
+        }
+
+        var strategyBars = includeExtended
+            ? enriched
+            : enriched.Where(b => b.Session == MarketSession.Regular).ToList();
+
+        var hindsight = PerfectHindsightCalculator.Compute(strategyBars);
+        var trade = strategy.EvaluateDay(enriched.OrderBy(b => b.UtcTime).ToList(), parameters, shares);
+
+        var capturePct = hindsight.ProfPerShare is > 0 && trade.PnlPerShare is not null
+            ? trade.PnlPerShare / hindsight.ProfPerShare * 100m
+            : (decimal?)null;
+
+        return new ChartDayEvaluation
+        {
+            HasData = true,
+            Traded = trade.Taken,
+            PnlPct = trade.Pct,
+            CapturePct = capturePct,
+            PnlDollar = trade.Pnl,
+            EntryTime = trade.EntryTime,
+            EntryPrice = trade.EntryPrice,
+            ExitTime = trade.ExitTime,
+            ExitPrice = trade.ExitPrice,
+            ExitReason = trade.ExitReason
+        };
+    }
+
+    private static StrategyTradeResult BuildTradeResult(ChartDayEvaluation evaluation) => new()
+    {
+        Taken = evaluation.Traded,
+        Pct = evaluation.PnlPct,
+        Pnl = evaluation.PnlDollar,
+        EntryTime = evaluation.EntryTime,
+        EntryPrice = evaluation.EntryPrice,
+        ExitTime = evaluation.ExitTime,
+        ExitPrice = evaluation.ExitPrice,
+        ExitReason = evaluation.ExitReason,
+        PnlPerShare = evaluation.EntryPrice is not null && evaluation.ExitPrice is not null
+            ? evaluation.ExitPrice - evaluation.EntryPrice
+            : null
+    };
 
     private static EnrichedBar ToEnrichedBar(Candle candle)
     {
