@@ -18,6 +18,7 @@ public sealed class BacktestController(
     MarketDataService marketDataService,
     ChartBacktestService chartBacktestService,
     StrategyHeatmapService strategyHeatmapService,
+    ExploratoryGridService exploratoryGridService,
     IStrategyParser parser) : ControllerBase
 {
     /// <summary>
@@ -110,6 +111,39 @@ public sealed class BacktestController(
             return Ok(response);
         }
         catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Exploratory net-after-costs grid across tickers and trading days. Not out-of-sample evidence.
+    /// </summary>
+    [HttpPost("exploratory-grid")]
+    public async Task<ActionResult<ExploratoryGridResponse>> ExploratoryGrid(
+        [FromBody] ExploratoryGridRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.To < request.From)
+        {
+            return BadRequest(new { error = "'to' must be on or after 'from'." });
+        }
+
+        if (request.Tickers.Count == 0)
+        {
+            return BadRequest(new { error = "At least one ticker is required." });
+        }
+
+        try
+        {
+            var response = await exploratoryGridService.RunAsync(request, cancellationToken);
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
         {
             return BadRequest(new { error = ex.Message });
         }

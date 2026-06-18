@@ -68,6 +68,28 @@ export async function fetchMinuteCoverage({ ticker, startDate, endDate } = {}) {
   return request(`/api/data/coverage/minute${query ? `?${query}` : ''}`);
 }
 
+export async function queueMinute({ tickers, dateFrom, dateTo }) {
+  return request('/api/data/queue-minute', {
+    method: 'POST',
+    body: JSON.stringify({ tickers, dateFrom, dateTo }),
+  });
+}
+
+export async function scrapeData(batchSize = 20) {
+  return request(`/api/data/scrape?batchSize=${batchSize}`, { method: 'POST' });
+}
+
+export async function recordData(batchSize = 20, maxRounds = 500) {
+  return request(`/api/data/record?batchSize=${batchSize}&maxRounds=${maxRounds}`, { method: 'POST' });
+}
+
+export async function fetchExploratoryGrid(payload) {
+  return request('/api/backtest/exploratory-grid', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function commitBacktest(payload) {
   return request('/api/backtest/commit', {
     method: 'POST',
