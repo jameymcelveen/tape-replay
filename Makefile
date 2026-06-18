@@ -7,12 +7,14 @@ TICKERS   ?= EDHL,CCHH,CAST,VSME,JRSH
 DATE_FROM ?= 2026-06-11
 DATE_TO   ?= 2026-06-17
 
+ROOT_DIR        := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 BACKEND_PROJECT := backend/TapeReplay.Api.csproj
 TEST_PROJECT    := backend/tests/TapeReplay.Api.Tests/TapeReplay.Api.Tests.csproj
 ARTIFACTS_DIR   := artifacts
 BACKEND_OUT     := $(ARTIFACTS_DIR)/backend
 FRONTEND_DIR    := frontend
 RELEASE_DIR     := release
+CDN_DIST_DIR    := dist
 CONFIGURATION   ?= Release
 INSTALLER_SCRIPT := ./scripts/build-installer.sh
 
@@ -47,10 +49,14 @@ install: ## Install npm and dotnet dependencies
 	dotnet restore $(BACKEND_PROJECT)
 	dotnet restore $(TEST_PROJECT)
 
-clean: ## Remove build artifacts and release output
-	rm -rf $(ARTIFACTS_DIR) $(RELEASE_DIR) $(CDN_DIST_DIR)/*
-	rm -rf $(FRONTEND_DIR)/dist
-	rm -rf backend/bin backend/obj
+clean: ## Remove build artifacts and release output (repo-local paths only)
+	@test -n "$(ROOT_DIR)" && test "$(ROOT_DIR)" != "/"
+	@test -n "$(ARTIFACTS_DIR)" && test -n "$(RELEASE_DIR)" && test -n "$(CDN_DIST_DIR)"
+	rm -rf "$(ROOT_DIR)/$(ARTIFACTS_DIR)"
+	rm -rf "$(ROOT_DIR)/$(RELEASE_DIR)"
+	rm -rf "$(ROOT_DIR)/$(CDN_DIST_DIR)"
+	rm -rf "$(ROOT_DIR)/$(FRONTEND_DIR)/dist"
+	rm -rf "$(ROOT_DIR)/backend/bin" "$(ROOT_DIR)/backend/obj"
 	@echo "Clean complete."
 
 dev: ## Run backend, Vite, and Electron in development mode
