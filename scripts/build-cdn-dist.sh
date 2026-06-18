@@ -100,12 +100,16 @@ if [[ "${INCLUDE_INSTALLERS:-}" == "1" ]] && [[ -d "$ROOT/release" ]]; then
   shopt -u nullglob
 fi
 
+echo "Generating CDN landing page..."
+node "$ROOT/scripts/generate-cdn-index.mjs" "$DIST_DIR" "$ROOT"
+
 cat <<EOF
 
 CDN dist ready: $DIST_DIR/
+  index.html        (landing page + download links)
   manifest.json
   $ZIP_NAME
-  help/           (static documentation)
+  help/             (static documentation)
   SHA256: $SHA256
 
 cdnBaseUrl: $CDN_BASE

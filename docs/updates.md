@@ -62,6 +62,7 @@ cd dist && surge . tapereplay.surge.sh
 
 | File | Purpose |
 |------|---------|
+| `index.html` | Landing page with installer download links |
 | `manifest.json` | Auto-update metadata (generated with SHA256) |
 | `patch_ver_X.Y.Z.zip` | Frontend-only JS/CSS/assets |
 | `help/` | Static HTML documentation (linked from in-app Help menu) |
