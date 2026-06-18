@@ -184,22 +184,22 @@ public sealed class StrategyHeatmapService(
         DateOnly date,
         string configHash,
         ChartDayEvaluation evaluation) => new()
-    {
-        Ticker = ticker,
-        Date = date,
-        StrategyConfigHash = configHash,
-        HasData = evaluation.HasData,
-        Traded = evaluation.Traded,
-        PnlPct = evaluation.PnlPct,
-        CapturePct = evaluation.CapturePct,
-        PnlDollar = evaluation.PnlDollar,
-        EntryTime = evaluation.EntryTime,
-        EntryPrice = evaluation.EntryPrice,
-        ExitTime = evaluation.ExitTime,
-        ExitPrice = evaluation.ExitPrice,
-        ExitReason = evaluation.ExitReason,
-        ComputedAt = DateTime.UtcNow
-    };
+        {
+            Ticker = ticker,
+            Date = date,
+            StrategyConfigHash = configHash,
+            HasData = evaluation.HasData,
+            Traded = evaluation.Traded,
+            PnlPct = evaluation.PnlPct,
+            CapturePct = evaluation.CapturePct,
+            PnlDollar = evaluation.PnlDollar,
+            EntryTime = evaluation.EntryTime,
+            EntryPrice = evaluation.EntryPrice,
+            ExitTime = evaluation.ExitTime,
+            ExitPrice = evaluation.ExitPrice,
+            ExitReason = evaluation.ExitReason,
+            ComputedAt = DateTime.UtcNow
+        };
 
     private static StrategyHeatmapDayCell ToCell(DateOnly date, StrategyResultEntity? entity)
     {

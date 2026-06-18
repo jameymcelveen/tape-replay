@@ -47,8 +47,7 @@ help: ## Show available targets
 install: ## Install npm and dotnet dependencies
 	npm install
 	npm install --prefix $(FRONTEND_DIR)
-	dotnet restore $(BACKEND_PROJECT)
-	dotnet restore $(TEST_PROJECT)
+	dotnet restore TapeReplay.sln
 
 clean: ## Remove build artifacts and release output (repo-local paths only)
 	@test -n "$(ROOT_DIR)" && test "$(ROOT_DIR)" != "/"
@@ -170,11 +169,13 @@ verify-data: ## Show bar counts for EDHL,CCHH,CAST,VSME,JRSH in local SQLite
 run: stage ## Run staged Electron app (built frontend/dist; use make dev for hot reload)
 	NODE_ENV=production npm start
 
+VERIFY_BACKEND_PORT ?= 5199
+
 verify-backend: publish-backend ## Smoke-test the published backend binary
-	@$(BACKEND_OUT)/TapeReplay.Api & \
+	@ASPNETCORE_URLS=http://127.0.0.1:$(VERIFY_BACKEND_PORT) $(BACKEND_OUT)/TapeReplay.Api & \
 		BACKEND_PID=$$!; \
 		sleep 3; \
-		curl -sf http://localhost:5180/api/health > /dev/null; \
+		curl -sf http://127.0.0.1:$(VERIFY_BACKEND_PORT)/api/health > /dev/null; \
 		STATUS=$$?; \
 		kill $$BACKEND_PID 2>/dev/null || true; \
 		if [ $$STATUS -eq 0 ]; then echo "Backend health check passed."; else echo "Backend health check failed."; exit 1; fi

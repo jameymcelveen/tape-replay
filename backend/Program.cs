@@ -17,7 +17,10 @@ builder.Configuration.AddJsonFile(
     optional: true,
     reloadOnChange: true);
 
-builder.WebHost.UseUrls("http://localhost:5180");
+if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    builder.WebHost.UseUrls("http://localhost:5180");
+}
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

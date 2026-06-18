@@ -46,13 +46,13 @@ public static class ParquetDailyPartitionCodec
         using var reader = await ParquetReader.CreateAsync(stream, cancellationToken: cancellationToken);
         using var group = reader.OpenRowGroupReader(0);
 
-        var ticker = (string[]) (await group.ReadColumnAsync(Schema.DataFields[0], cancellationToken)).Data;
-        var dayNumbers = (int[]) (await group.ReadColumnAsync(Schema.DataFields[1], cancellationToken)).Data;
-        var open = (double[]) (await group.ReadColumnAsync(Schema.DataFields[2], cancellationToken)).Data;
-        var high = (double[]) (await group.ReadColumnAsync(Schema.DataFields[3], cancellationToken)).Data;
-        var low = (double[]) (await group.ReadColumnAsync(Schema.DataFields[4], cancellationToken)).Data;
-        var close = (double[]) (await group.ReadColumnAsync(Schema.DataFields[5], cancellationToken)).Data;
-        var volume = (long[]) (await group.ReadColumnAsync(Schema.DataFields[6], cancellationToken)).Data;
+        var ticker = (string[])(await group.ReadColumnAsync(Schema.DataFields[0], cancellationToken)).Data;
+        var dayNumbers = (int[])(await group.ReadColumnAsync(Schema.DataFields[1], cancellationToken)).Data;
+        var open = (double[])(await group.ReadColumnAsync(Schema.DataFields[2], cancellationToken)).Data;
+        var high = (double[])(await group.ReadColumnAsync(Schema.DataFields[3], cancellationToken)).Data;
+        var low = (double[])(await group.ReadColumnAsync(Schema.DataFields[4], cancellationToken)).Data;
+        var close = (double[])(await group.ReadColumnAsync(Schema.DataFields[5], cancellationToken)).Data;
+        var volume = (long[])(await group.ReadColumnAsync(Schema.DataFields[6], cancellationToken)).Data;
 
         var count = ticker.Length;
         var result = new List<DailyBar>(count);
