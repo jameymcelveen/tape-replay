@@ -9,15 +9,22 @@ export const DEFAULT_PULL_FROM = '2026-04-01';
 export const DEFAULT_PULL_TO = '2026-06-18';
 
 export const defaultStrategyConfig = {
-  name: 'Daily High Breakout',
-  entryTrigger: 'PriceBreaksAboveDailyHigh',
+  name: 'Opening Range Breakout',
+  entryTrigger: 'OpeningRangeHighBreak',
+  openingRangeMinutes: 5,
+  entryWindowStart: '09:35',
+  entryWindowEnd: '10:30',
   positionSizeUsd: 1000,
-  stopLossPercent: 1,
+  stopLossPercent: 1.5,
   takeProfitTargets: [
-    { percent: 2, weight: 0.5 },
-    { percent: 4, weight: 0.5 },
+    { percent: 3, weight: 0.5 },
+    { percent: 6, weight: 0.5 },
   ],
-  closeAllAt: '14:00',
-  maxDailyLossUsd: 500,
-  maxConcurrentTrades: 3,
+  closeAllAt: '12:00',
+  maxDailyLossUsd: 300,
+  maxConcurrentTrades: 1,
+  maxTradesPerDay: 1,
+  noReentryAfterStop: true,
+  regularSessionOnly: true,
+  firstBreakoutOnly: true,
 };

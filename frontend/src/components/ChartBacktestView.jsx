@@ -28,7 +28,7 @@ function formatPct(value) {
   return `${value >= 0 ? '+' : ''}${Number(value).toFixed(2)}%`;
 }
 
-export default function ChartBacktestView({ isLoading, onRun, navigateRequest, onNavigateHandled }) {
+export default function ChartBacktestView({ isLoading, onRun, navigateRequest, onNavigateHandled, embedded = false }) {
   const [ticker, setTicker] = useState('VSME');
   const [date, setDate] = useState('2026-06-16');
   const [fromTime, setFromTime] = useState('04:00');
@@ -139,15 +139,19 @@ export default function ChartBacktestView({ isLoading, onRun, navigateRequest, o
   const hindsight = result?.hindsight;
 
   return (
-    <div className="space-y-6 lg:col-span-2">
+    <div className={embedded ? 'space-y-4' : 'space-y-6 lg:col-span-2'}>
       <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-6">
-        <h2 className="text-lg font-semibold">Chart backtest</h2>
+        <h2 className="text-lg font-semibold">{embedded ? 'Day chart' : 'Chart backtest'}</h2>
         <p className="mt-1 text-sm text-slate-400">
-          Run ORB or PMH against stored minute bars and compare to perfect hindsight.
+          {embedded
+            ? 'ORB/PMH candlesticks for the selected overview cell. Change ticker or date above, or click another heatmap cell.'
+            : 'Run ORB or PMH against stored minute bars and compare to perfect hindsight.'}
         </p>
-        <p className="mt-2">
-          <HelpLink page="chartBacktest">How to read the chart &amp; markers →</HelpLink>
-        </p>
+        {!embedded && (
+          <p className="mt-2">
+            <HelpLink page="chartBacktest">How to read the chart &amp; markers →</HelpLink>
+          </p>
+        )}
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label className="block text-sm">

@@ -60,6 +60,16 @@ public sealed class ExploratoryGridDayCell
     public decimal TotalCosts { get; set; }
 
     public int TradeCount { get; set; }
+
+    public DateTime? IdealBuyTime { get; set; }
+
+    public decimal? IdealBuyPrice { get; set; }
+
+    public DateTime? IdealSellTime { get; set; }
+
+    public decimal? IdealSellPrice { get; set; }
+
+    public decimal? IdealCapturePct { get; set; }
 }
 
 /// <summary>

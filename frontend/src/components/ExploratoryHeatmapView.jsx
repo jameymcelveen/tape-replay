@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ChartBacktestView from './ChartBacktestView';
 import ExploratoryOverviewGrid, { indexExploratoryRows } from './ExploratoryOverviewGrid';
 import HelpLink from './HelpLink';
@@ -17,7 +17,9 @@ export default function ExploratoryHeatmapView({
   const [tickerFilter, setTickerFilter] = useState('ALL');
   const [grid, setGrid] = useState(null);
   const [error, setError] = useState('');
-  const [drillDown, setDrillDown] = useState(null);
+  const [selectedCell, setSelectedCell] = useState(null);
+  const [chartNavigate, setChartNavigate] = useState(null);
+  const chartRef = useRef(null);
 
   const tickers = DEFAULT_TICKERS;
 
@@ -66,29 +68,25 @@ export default function ExploratoryHeatmapView({
     return computeRowTotals(row?.days ?? []);
   }, [grid, tickerFilter]);
 
-  if (drillDown) {
-    return (
-      <div className="space-y-4 lg:col-span-2">
-        <button
-          type="button"
-          className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-          onClick={() => setDrillDown(null)}
-        >
-          Back to overview
-        </button>
-        <ChartBacktestView
-          isLoading={isLoading}
-          onRun={onRun}
-          navigateRequest={{
-            ticker: drillDown.ticker,
-            date: drillDown.date,
-            autoRun: true,
-            scope: 'all',
-          }}
-          onNavigateHandled={() => {}}
-        />
-      </div>
-    );
+  const gainLoss = useMemo(() => computeGainLossSummary(grid?.rows ?? [], tickerFilter), [grid, tickerFilter]);
+
+  function handleCellClick({ ticker, date, cell }) {
+    if (!cell?.hasData) {
+      return;
+    }
+
+    setSelectedCell({ ticker, date });
+    setChartNavigate({
+      ticker,
+      date,
+      autoRun: true,
+      scope: 'all',
+      navKey: `${ticker}-${date}-${Date.now()}`,
+    });
+
+    requestAnimationFrame(() => {
+      chartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   return (
@@ -140,13 +138,45 @@ export default function ExploratoryHeatmapView({
           </div>
         </div>
 
-        {totals && (
-          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Metric label="Net P&amp;L (headline)" value={formatMoney(totals.netTotalPnL)} emphasis />
-            <Metric label="Win rate (trading days)" value={`${Number(totals.winRateDays ?? 0).toFixed(1)}%`} />
-            <Metric label="Max drawdown" value={formatMoney(totals.maxDrawdownAbsolute)} />
-            <Metric label="Longest losing streak (days)" value={String(totals.longestLosingStreakDays ?? 0)} />
+        {gainLoss && (
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <Metric label="Total gains" value={formatMoney(gainLoss.totalGains)} positive />
+            <Metric label="Total losses" value={formatMoney(gainLoss.totalLosses)} negative />
+            <Metric label="Net P&amp;L (headline)" value={formatMoney(gainLoss.net)} emphasis />
+            <Metric label="Win rate (trading days)" value={`${Number(totals?.winRateDays ?? 0).toFixed(1)}%`} />
+            <Metric label="Max drawdown" value={formatMoney(totals?.maxDrawdownAbsolute ?? 0)} />
           </dl>
+        )}
+
+        {gainLoss && Object.keys(gainLoss.byTicker).length > 0 && (
+          <div className="mt-6 overflow-x-auto rounded-lg border border-slate-700">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-950/80 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Ticker</th>
+                  <th className="px-4 py-3">Gains</th>
+                  <th className="px-4 py-3">Losses</th>
+                  <th className="px-4 py-3">Net</th>
+                  <th className="px-4 py-3">Traded days</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(gainLoss.byTicker)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([ticker, row]) => (
+                    <tr key={ticker} className="border-t border-slate-800 text-slate-200">
+                      <td className="px-4 py-2 font-medium">{ticker}</td>
+                      <td className="px-4 py-2 text-emerald-400">{formatMoney(row.gains)}</td>
+                      <td className="px-4 py-2 text-red-400">{formatMoney(row.losses)}</td>
+                      <td className={`px-4 py-2 font-medium ${row.net >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                        {formatMoney(row.net)}
+                      </td>
+                      <td className="px-4 py-2 text-slate-400">{row.tradedDays}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {error && (
@@ -159,23 +189,96 @@ export default function ExploratoryHeatmapView({
           <ExploratoryOverviewGrid
             tradingDays={tradingDays}
             rows={displayRows}
-            onCellClick={({ ticker, date }) => setDrillDown({ ticker, date })}
+            selectedCell={selectedCell}
+            onCellClick={handleCellClick}
           />
         ) : (
           <p className="text-sm text-slate-500">Loading grid…</p>
         )}
       </section>
+
+      <div ref={chartRef}>
+        {selectedCell ? (
+          <ChartBacktestView
+            embedded
+            isLoading={isLoading}
+            onRun={onRun}
+            navigateRequest={chartNavigate}
+            onNavigateHandled={() => {}}
+          />
+        ) : (
+          <section className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center text-sm text-slate-500">
+            Click a heatmap cell with data to load the ORB/PMH chart for that ticker and day.
+          </section>
+        )}
+      </div>
     </div>
   );
 }
 
-function Metric({ label, value, emphasis = false }) {
+function Metric({ label, value, emphasis = false, positive = false, negative = false }) {
+  let valueClass = 'text-slate-100';
+  if (emphasis) {
+    valueClass = 'text-emerald-300';
+  } else if (positive) {
+    valueClass = 'text-emerald-400';
+  } else if (negative) {
+    valueClass = 'text-red-400';
+  }
+
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-4">
       <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className={`mt-2 text-lg font-semibold ${emphasis ? 'text-emerald-300' : 'text-slate-100'}`}>{value}</dd>
+      <dd className={`mt-2 text-lg font-semibold ${valueClass}`}>{value}</dd>
     </div>
   );
+}
+
+function computeGainLossSummary(rows, tickerFilter) {
+  const scopedRows = tickerFilter === 'ALL'
+    ? rows
+    : rows.filter((row) => row.ticker === tickerFilter);
+
+  let totalGains = 0;
+  let totalLosses = 0;
+  const byTicker = {};
+
+  for (const row of scopedRows) {
+    let gains = 0;
+    let losses = 0;
+    let net = 0;
+    let tradedDays = 0;
+
+    for (const cell of row.days ?? []) {
+      if (!cell.hasData) {
+        continue;
+      }
+
+      const dayNet = cell.netTotalPnL ?? 0;
+      net += dayNet;
+
+      if (dayNet > 0) {
+        gains += dayNet;
+      } else if (dayNet < 0) {
+        losses += dayNet;
+      }
+
+      if (cell.traded) {
+        tradedDays += 1;
+      }
+    }
+
+    totalGains += gains;
+    totalLosses += losses;
+    byTicker[row.ticker] = { gains, losses, net, tradedDays };
+  }
+
+  return {
+    totalGains,
+    totalLosses,
+    net: totalGains + totalLosses,
+    byTicker,
+  };
 }
 
 function computeRowTotals(days) {

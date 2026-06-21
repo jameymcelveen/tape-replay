@@ -1,4 +1,5 @@
 using TapeReplay.Api.Models;
+using TapeReplay.Api.Services.ChartBacktest;
 
 namespace TapeReplay.Api.Tests.Helpers;
 
@@ -8,7 +9,7 @@ internal static class TestCandles
     {
         var bars = new List<Candle>();
         var price = startPrice;
-        var start = date.ToDateTime(new TimeOnly(9, 30), DateTimeKind.Utc);
+        var start = EasternMarketTime.ToUtc(date, EasternMarketTime.RegularOpen);
 
         for (var i = 0; i < count; i++)
         {

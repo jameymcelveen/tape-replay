@@ -69,7 +69,12 @@ public sealed class ExploratoryGridService(
                     NetTotalPnL = result.NetTotalPnL,
                     GrossTotalPnL = result.GrossTotalPnL,
                     TotalCosts = result.TotalCosts,
-                    TradeCount = result.Trades.Count
+                    TradeCount = result.Trades.Count,
+                    IdealBuyTime = result.IdealTrade?.BuyTime,
+                    IdealBuyPrice = result.IdealTrade?.BuyPrice,
+                    IdealSellTime = result.IdealTrade?.SellTime,
+                    IdealSellPrice = result.IdealTrade?.SellPrice,
+                    IdealCapturePct = result.IdealCapturePct
                 });
             }
 

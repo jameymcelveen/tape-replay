@@ -83,10 +83,45 @@ function ExploratoryResults({ data }) {
       <SampleBanner label="Exploratory single day (not evidence)" tone="amber" />
       {metrics?.verdict && <VerdictBox text={metrics.verdict} />}
       {metrics && <HonestMetricsGrid metrics={metrics} />}
+      <IdealTradePanel ideal={data.idealTrade} capturePct={data.idealCapturePct} />
       <p className="text-sm text-slate-400">
         {data.ticker} on {data.date} using {data.strategyName}
       </p>
       <TradesTable trades={data.trades} />
+    </div>
+  );
+}
+
+function IdealTradePanel({ ideal, capturePct }) {
+  if (!ideal?.buyTime && !ideal?.sellTime) {
+    return (
+      <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-4 text-sm text-slate-500">
+        No ideal long pair found in scoped session bars for this day.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-violet-800/50 bg-violet-950/20 p-4">
+      <p className="text-sm font-medium text-violet-200">Ideal buy / sell (perfect hindsight benchmark)</p>
+      <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+        <div>
+          <dt className="text-slate-500">Ideal buy</dt>
+          <dd className="text-slate-100">{formatTime(ideal.buyTime)} @ {formatPrice(ideal.buyPrice)}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">Ideal sell</dt>
+          <dd className="text-slate-100">{formatTime(ideal.sellTime)} @ {formatPrice(ideal.sellPrice)}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">Ideal move</dt>
+          <dd className="text-slate-100">{formatPrice(ideal.profPerShare)}/share ({Number(ideal.pct ?? 0).toFixed(2)}%)</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">Strategy capture</dt>
+          <dd className="text-slate-100">{capturePct == null ? 'n/a' : `${Number(capturePct).toFixed(1)}% of ideal gross`}</dd>
+        </div>
+      </dl>
     </div>
   );
 }
@@ -187,6 +222,23 @@ function MetricCard({ label, value, sub, danger = false, headline = false, muted
 }
 
 function formatTime(isoString) {
+  if (!isoString) {
+    return '—';
+  }
+
   const date = new Date(isoString);
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' });
+}
+
+function formatPrice(value) {
+  if (value == null) {
+    return '—';
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(value);
 }

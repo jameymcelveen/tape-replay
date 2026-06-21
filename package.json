@@ -13,7 +13,7 @@
     "dev:backend": "dotnet run --project backend",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:electron": "cross-env NODE_ENV=development electron .",
-    "dev": "concurrently -k \"npm run dev:backend\" \"npm run dev:frontend\" \"wait-on http://localhost:5180/api/health http://localhost:5173 && npm run dev:electron\"",
+    "dev": "bash scripts/dev.sh",
     "dev:ui": "bash scripts/dev-ui.sh",
     "demo:install": "playwright install chromium",
     "demo:data-pull": "node demos/data-pull.mjs",

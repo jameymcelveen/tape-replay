@@ -1,6 +1,8 @@
 using System.Globalization;
 using TapeReplay.Api.Interfaces;
 using TapeReplay.Api.Models;
+using TapeReplay.Api.Models.ChartBacktest;
+using TapeReplay.Api.Services.ChartBacktest;
 
 namespace TapeReplay.Api.Services;
 
@@ -37,6 +39,8 @@ public sealed class BacktestEngine(
 
         var (trades, log, equityCurve) = ReplayDay(bars, config, costs, startingCapitalUsd);
         var metrics = metricsCalculator.Compute(trades, equityCurve, startingCapitalUsd, sampleLabel);
+        var ideal = IdealTradeBenchmark.Compute(bars, config.RegularSessionOnly, config.PositionSizeUsd);
+        var capture = IdealTradeBenchmark.ComputeCapturePercent(metrics.NetTotalPnL, ideal, config.PositionSizeUsd);
 
         return new BacktestResult
         {
@@ -51,7 +55,9 @@ public sealed class BacktestEngine(
             WinRate = metrics.WinRate,
             MaxDrawdown = metrics.MaxDrawdownAbsolute,
             TradeLog = log,
-            Metrics = metrics
+            Metrics = metrics,
+            IdealTrade = ideal,
+            IdealCapturePct = capture
         };
     }
 
@@ -80,32 +86,13 @@ public sealed class BacktestEngine(
                 continue;
             }
 
-            var (dayTrades, dayLog, _) = ReplayDay(bars, config, costs, runningEquity);
-            allTrades.AddRange(dayTrades);
-            allLogs.AddRange(dayLog.Select(line => $"{date:yyyy-MM-dd} {line}"));
+            var dayResult = Run(ticker, date, config, bars, costs, sampleLabel, runningEquity);
+            allTrades.AddRange(dayResult.Trades);
+            allLogs.AddRange(dayResult.TradeLog.Select(line => $"{date:yyyy-MM-dd} {line}"));
 
-            runningEquity += dayTrades.Sum(t => t.NetPnL);
+            runningEquity += dayResult.Trades.Sum(t => t.NetPnL);
             equityCurve.Add(new EquityPoint { Date = date, Equity = runningEquity });
-
-            var dayMetrics = metricsCalculator.Compute(dayTrades, [
-                new EquityPoint { Date = date, Equity = runningEquity }
-            ], startingCapitalUsd, sampleLabel);
-
-            dailyResults.Add(new BacktestResult
-            {
-                Ticker = ticker.ToUpperInvariant(),
-                Date = date,
-                SampleLabel = sampleLabel,
-                StrategyName = config.Name,
-                Trades = dayTrades,
-                GrossTotalPnL = dayMetrics.GrossTotalPnL,
-                NetTotalPnL = dayMetrics.NetTotalPnL,
-                TotalCosts = dayMetrics.TotalCosts,
-                WinRate = dayMetrics.WinRate,
-                MaxDrawdown = dayMetrics.MaxDrawdownAbsolute,
-                TradeLog = dayLog,
-                Metrics = dayMetrics
-            });
+            dailyResults.Add(dayResult);
         }
 
         var windowMetrics = metricsCalculator.Compute(allTrades, equityCurve, startingCapitalUsd, sampleLabel);
@@ -142,15 +129,20 @@ public sealed class BacktestEngine(
         var runningEquity = startingCapitalUsd;
         var runningDailyHigh = orderedBars[0].Open;
         var tradeCounter = 0;
+        var dailyTradesCompleted = 0;
+        var stoppedOutToday = false;
+        var firstBreakoutConsumed = false;
+        decimal? openingRangeHigh = null;
+        var regularSessionBarsInOr = 0;
+        var openingRangeComplete = false;
 
         for (var index = 0; index < orderedBars.Count; index++)
         {
             var bar = orderedBars[index];
             var priorBars = orderedBars.Take(index).ToList();
-            var marketTime = TimeOnly.FromDateTime(bar.DateTime);
-            var previousDailyHigh = index == 0
-                ? orderedBars[0].Open
-                : priorBars.Max(b => b.High);
+            var session = MarketSessionClassifier.Classify(bar.DateTime);
+            var marketTime = TimeOnly.FromDateTime(MarketSessionClassifier.ToEastern(bar.DateTime));
+            var previousDailyHigh = ComputeRunningDailyHigh(priorBars, config.RegularSessionOnly, orderedBars[0].Open);
 
             var exitContext = new BarContext
             {
@@ -161,12 +153,47 @@ public sealed class BacktestEngine(
                 MarketTime = marketTime
             };
 
-            ProcessExits(openPositions, exitContext, config, costs, trades, log, ref dailyNetPnL, ref runningEquity, equityCurve);
+            ProcessExits(
+                openPositions,
+                exitContext,
+                config,
+                costs,
+                trades,
+                log,
+                ref dailyNetPnL,
+                ref runningEquity,
+                equityCurve,
+                ref dailyTradesCompleted,
+                ref stoppedOutToday);
+
+            if (session == MarketSession.Regular)
+            {
+                if (!openingRangeComplete)
+                {
+                    openingRangeHigh = openingRangeHigh.HasValue
+                        ? Math.Max(openingRangeHigh.Value, bar.High)
+                        : bar.High;
+                    regularSessionBarsInOr++;
+                    if (regularSessionBarsInOr >= config.OpeningRangeMinutes)
+                    {
+                        openingRangeComplete = true;
+                    }
+                }
+
+                runningDailyHigh = Math.Max(runningDailyHigh, bar.High);
+            }
 
             if (dailyNetPnL <= -config.MaxDailyLossUsd)
             {
-                log.Add($"{bar.DateTime:HH:mm}: max daily loss reached, halting entries");
-                runningDailyHigh = Math.Max(runningDailyHigh, bar.High);
+                log.Add($"{marketTime:HH:mm} ET: max daily loss reached, halting entries");
+                continue;
+            }
+
+            var canEnterSession = !config.RegularSessionOnly || session == MarketSession.Regular;
+            var canEnterTime = marketTime < config.CloseAllAt;
+
+            if (!canEnterSession || !canEnterTime)
+            {
                 continue;
             }
 
@@ -176,7 +203,12 @@ public sealed class BacktestEngine(
                 PriorBars = priorBars,
                 RunningDailyHigh = previousDailyHigh,
                 BarOpen = bar.Open,
-                MarketTime = marketTime
+                MarketTime = marketTime,
+                DailyTradesCompleted = dailyTradesCompleted,
+                StoppedOutToday = stoppedOutToday,
+                FirstBreakoutConsumed = firstBreakoutConsumed,
+                OpeningRangeHigh = openingRangeHigh,
+                OpeningRangeComplete = openingRangeComplete
             };
 
             if (openPositions.Count < config.MaxConcurrentTrades
@@ -202,23 +234,30 @@ public sealed class BacktestEngine(
                         PendingTakeProfits = config.TakeProfitTargets.ToList()
                     });
 
-                    log.Add($"{bar.DateTime:HH:mm}: ENTRY {shares} shares @ {entryFill.FillPrice:F2} (ref {entryReference:F2}, costs {entryFill.TotalCost:F2})");
+                    if (config.FirstBreakoutOnly)
+                    {
+                        firstBreakoutConsumed = true;
+                    }
+
+                    log.Add($"{marketTime:HH:mm} ET: ENTRY {shares} shares @ {entryFill.FillPrice:F2} (ref {entryReference:F2}, costs {entryFill.TotalCost:F2})");
                 }
             }
-
-            runningDailyHigh = Math.Max(runningDailyHigh, bar.High);
         }
 
         foreach (var position in openPositions.ToList())
         {
             var lastBar = orderedBars[^1];
+            var marketTime = TimeOnly.FromDateTime(MarketSessionClassifier.ToEastern(lastBar.DateTime));
             var exitContext = new BarContext
             {
                 BarIndex = orderedBars.Count - 1,
                 Bar = lastBar,
                 PriorBars = orderedBars.Take(orderedBars.Count - 1).ToList(),
-                RunningDailyHigh = orderedBars.Take(orderedBars.Count - 1).DefaultIfEmpty(lastBar).Max(b => b.High),
-                MarketTime = TimeOnly.FromDateTime(lastBar.DateTime)
+                RunningDailyHigh = ComputeRunningDailyHigh(
+                    orderedBars.Take(orderedBars.Count - 1).ToList(),
+                    config.RegularSessionOnly,
+                    orderedBars[0].Open),
+                MarketTime = marketTime
             };
 
             ClosePosition(
@@ -233,9 +272,31 @@ public sealed class BacktestEngine(
                 ref dailyNetPnL,
                 ref runningEquity,
                 equityCurve);
+
+            if (position.RemainingShares == 0)
+            {
+                dailyTradesCompleted++;
+            }
         }
 
         return (trades, log, equityCurve);
+    }
+
+    private static decimal ComputeRunningDailyHigh(
+        IReadOnlyList<Candle> priorBars,
+        bool regularSessionOnly,
+        decimal seedOpen)
+    {
+        if (priorBars.Count == 0)
+        {
+            return seedOpen;
+        }
+
+        var highs = priorBars
+            .Where(bar => !regularSessionOnly || MarketSessionClassifier.Classify(bar.DateTime) == MarketSession.Regular)
+            .Select(bar => bar.High);
+
+        return highs.Any() ? highs.Max() : seedOpen;
     }
 
     private void ProcessExits(
@@ -247,7 +308,9 @@ public sealed class BacktestEngine(
         List<string> log,
         ref decimal dailyNetPnL,
         ref decimal runningEquity,
-        List<EquityPoint> equityCurve)
+        List<EquityPoint> equityCurve,
+        ref int dailyTradesCompleted,
+        ref bool stoppedOutToday)
     {
         foreach (var position in openPositions.ToList())
         {
@@ -277,11 +340,17 @@ public sealed class BacktestEngine(
                     var level = int.Parse(signal.Reason["take_profit_".Length..], CultureInfo.InvariantCulture) - 1;
                     position.FilledTakeProfitLevels.Add(level);
                 }
+
+                if (signal.Reason == "stop_loss")
+                {
+                    stoppedOutToday = true;
+                }
             }
 
             if (position.RemainingShares == 0)
             {
                 openPositions.Remove(position);
+                dailyTradesCompleted++;
             }
         }
     }
@@ -331,7 +400,8 @@ public sealed class BacktestEngine(
 
         position.RemainingShares -= sharesToClose;
 
-        log.Add($"{exitTime:HH:mm}: EXIT {sharesToClose} shares @ {exitFill.FillPrice:F2} ({reason}), gross {grossPnL:F2}, net {netPnL:F2}, costs {totalCosts:F2}");
+        var exitEt = TimeOnly.FromDateTime(MarketSessionClassifier.ToEastern(exitTime));
+        log.Add($"{exitEt:HH:mm} ET: EXIT {sharesToClose} shares @ {exitFill.FillPrice:F2} ({reason}), gross {grossPnL:F2}, net {netPnL:F2}, costs {totalCosts:F2}");
     }
 
     private BacktestResult EmptyResult(
@@ -359,3 +429,4 @@ public sealed class BacktestEngine(
         };
     }
 }
+

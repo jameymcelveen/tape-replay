@@ -1,3 +1,5 @@
+using TapeReplay.Api.Models.ChartBacktest;
+
 namespace TapeReplay.Api.Models;
 
 /// <summary>
@@ -30,4 +32,10 @@ public sealed class BacktestResult
     public IReadOnlyList<string> TradeLog { get; init; } = [];
 
     public HonestMetrics? Metrics { get; init; }
+
+    /// <summary>Perfect-hindsight best long buy/sell over the scoped session bars.</summary>
+    public HindsightResult? IdealTrade { get; init; }
+
+    /// <summary>Net P&amp;L as a percent of ideal gross P&amp;L on the same position size.</summary>
+    public decimal? IdealCapturePct { get; init; }
 }

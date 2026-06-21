@@ -32,6 +32,12 @@ public sealed class StrategyParser : IStrategyParser
                 continue;
             }
 
+            if (line.Equals("entry_rules {", StringComparison.OrdinalIgnoreCase))
+            {
+                section = "entry";
+                continue;
+            }
+
             if (line.Equals("exit_rules {", StringComparison.OrdinalIgnoreCase))
             {
                 section = "exit";
@@ -56,10 +62,22 @@ public sealed class StrategyParser : IStrategyParser
                 continue;
             }
 
+            if (line.Equals("on opening_range_high_break", StringComparison.OrdinalIgnoreCase))
+            {
+                config.EntryTrigger = EntryTriggerType.OpeningRangeHighBreak;
+                continue;
+            }
+
             if (line.StartsWith("set position_size to ", StringComparison.OrdinalIgnoreCase))
             {
                 var value = line["set position_size to ".Length..].Replace(" USD", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
                 config.PositionSizeUsd = decimal.Parse(value, CultureInfo.InvariantCulture);
+                continue;
+            }
+
+            if (section == "entry")
+            {
+                ParseEntryRule(line, config);
                 continue;
             }
 
@@ -86,9 +104,18 @@ public sealed class StrategyParser : IStrategyParser
         var builder = new StringBuilder();
         builder.AppendLine(CultureInfo.InvariantCulture, $"strategy \"{config.Name}\"");
         builder.AppendLine();
-        builder.AppendLine("on price_breaks_above_daily_high");
+        builder.AppendLine(config.EntryTrigger == EntryTriggerType.OpeningRangeHighBreak
+            ? "on opening_range_high_break"
+            : "on price_breaks_above_daily_high");
         builder.AppendLine();
         builder.AppendLine(CultureInfo.InvariantCulture, $"set position_size to {config.PositionSizeUsd:0} USD");
+        builder.AppendLine();
+        builder.AppendLine("entry_rules {");
+        builder.AppendLine(CultureInfo.InvariantCulture, $"  opening_range_minutes {config.OpeningRangeMinutes}");
+        builder.AppendLine(CultureInfo.InvariantCulture, $"  entry_window {config.EntryWindowStart:HH:mm} to {config.EntryWindowEnd:HH:mm}");
+        builder.AppendLine(CultureInfo.InvariantCulture, $"  first_breakout_only {config.FirstBreakoutOnly.ToString().ToLowerInvariant()}");
+        builder.AppendLine(CultureInfo.InvariantCulture, $"  regular_session_only {config.RegularSessionOnly.ToString().ToLowerInvariant()}");
+        builder.AppendLine("}");
         builder.AppendLine();
         builder.AppendLine("exit_rules {");
 
@@ -108,9 +135,43 @@ public sealed class StrategyParser : IStrategyParser
         builder.AppendLine("risk_management {");
         builder.AppendLine(CultureInfo.InvariantCulture, $"  max_daily_loss {config.MaxDailyLossUsd:0} USD");
         builder.AppendLine(CultureInfo.InvariantCulture, $"  max_concurrent_trades {config.MaxConcurrentTrades}");
+        builder.AppendLine(CultureInfo.InvariantCulture, $"  max_trades_per_day {config.MaxTradesPerDay}");
+        builder.AppendLine(CultureInfo.InvariantCulture, $"  no_reentry_after_stop {config.NoReentryAfterStop.ToString().ToLowerInvariant()}");
         builder.AppendLine("}");
 
         return builder.ToString().TrimEnd();
+    }
+
+    private static void ParseEntryRule(string line, StrategyConfig config)
+    {
+        if (line.StartsWith("opening_range_minutes ", StringComparison.OrdinalIgnoreCase))
+        {
+            config.OpeningRangeMinutes = int.Parse(line["opening_range_minutes ".Length..].Trim(), CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (line.StartsWith("entry_window ", StringComparison.OrdinalIgnoreCase))
+        {
+            var window = line["entry_window ".Length..].Split(" to ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (window.Length == 2)
+            {
+                config.EntryWindowStart = TimeOnly.ParseExact(window[0], "H:mm", CultureInfo.InvariantCulture);
+                config.EntryWindowEnd = TimeOnly.ParseExact(window[1], "H:mm", CultureInfo.InvariantCulture);
+            }
+
+            return;
+        }
+
+        if (line.StartsWith("first_breakout_only ", StringComparison.OrdinalIgnoreCase))
+        {
+            config.FirstBreakoutOnly = bool.Parse(line["first_breakout_only ".Length..].Trim());
+            return;
+        }
+
+        if (line.StartsWith("regular_session_only ", StringComparison.OrdinalIgnoreCase))
+        {
+            config.RegularSessionOnly = bool.Parse(line["regular_session_only ".Length..].Trim());
+        }
     }
 
     private static void ParseExitRule(string line, StrategyConfig config, List<TakeProfitTarget> takeProfits)
@@ -155,6 +216,18 @@ public sealed class StrategyParser : IStrategyParser
         if (line.StartsWith("max_concurrent_trades ", StringComparison.OrdinalIgnoreCase))
         {
             config.MaxConcurrentTrades = int.Parse(line["max_concurrent_trades ".Length..].Trim(), CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (line.StartsWith("max_trades_per_day ", StringComparison.OrdinalIgnoreCase))
+        {
+            config.MaxTradesPerDay = int.Parse(line["max_trades_per_day ".Length..].Trim(), CultureInfo.InvariantCulture);
+            return;
+        }
+
+        if (line.StartsWith("no_reentry_after_stop ", StringComparison.OrdinalIgnoreCase))
+        {
+            config.NoReentryAfterStop = bool.Parse(line["no_reentry_after_stop ".Length..].Trim());
         }
     }
 

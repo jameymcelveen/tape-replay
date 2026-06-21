@@ -4,20 +4,40 @@ using TapeReplay.Api.Models;
 namespace TapeReplay.Api.Services;
 
 /// <summary>
-/// Ross Cameron style daily high breakout strategy with honest bar-open entry.
+/// Ross Cameron style breakout strategy with opening-range and daily-high triggers.
 /// </summary>
 public sealed class DailyHighBreakoutStrategy : IStrategy
 {
-    public string Name => "Daily High Breakout";
+    public string Name => "Opening Range Breakout";
 
     public bool ShouldEnter(EntryDecisionContext context, StrategyConfig config)
     {
-        if (config.EntryTrigger != EntryTriggerType.PriceBreaksAboveDailyHigh)
+        if (!IsWithinEntryWindow(context.MarketTime, config))
         {
             return false;
         }
 
-        return context.BarOpen > context.RunningDailyHigh;
+        if (context.DailyTradesCompleted >= config.MaxTradesPerDay)
+        {
+            return false;
+        }
+
+        if (config.NoReentryAfterStop && context.StoppedOutToday)
+        {
+            return false;
+        }
+
+        if (config.FirstBreakoutOnly && context.FirstBreakoutConsumed)
+        {
+            return false;
+        }
+
+        return config.EntryTrigger switch
+        {
+            EntryTriggerType.OpeningRangeHighBreak => ShouldEnterOpeningRangeBreak(context, config),
+            EntryTriggerType.PriceBreaksAboveDailyHigh => context.BarOpen > context.RunningDailyHigh,
+            _ => false
+        };
     }
 
     public ExitSignal? EvaluateExit(OpenPosition position, BarContext context, StrategyConfig config)
@@ -69,4 +89,17 @@ public sealed class DailyHighBreakoutStrategy : IStrategy
 
         return null;
     }
+
+    private static bool ShouldEnterOpeningRangeBreak(EntryDecisionContext context, StrategyConfig config)
+    {
+        if (!context.OpeningRangeComplete || context.OpeningRangeHigh is null)
+        {
+            return false;
+        }
+
+        return context.BarOpen > context.OpeningRangeHigh.Value;
+    }
+
+    private static bool IsWithinEntryWindow(TimeOnly marketTime, StrategyConfig config) =>
+        marketTime >= config.EntryWindowStart && marketTime <= config.EntryWindowEnd;
 }

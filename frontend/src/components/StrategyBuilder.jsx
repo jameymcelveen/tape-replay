@@ -41,6 +41,9 @@ export default function StrategyBuilder({
       strategy: {
         name: config.name,
         entryTrigger: config.entryTrigger,
+        openingRangeMinutes: Number(config.openingRangeMinutes),
+        entryWindowStart: config.entryWindowStart,
+        entryWindowEnd: config.entryWindowEnd,
         positionSizeUsd: Number(config.positionSizeUsd),
         stopLossPercent: Number(config.stopLossPercent),
         takeProfitTargets: config.takeProfitTargets.map((target) => ({
@@ -50,6 +53,10 @@ export default function StrategyBuilder({
         closeAllAt: config.closeAllAt,
         maxDailyLossUsd: Number(config.maxDailyLossUsd),
         maxConcurrentTrades: Number(config.maxConcurrentTrades),
+        maxTradesPerDay: Number(config.maxTradesPerDay),
+        noReentryAfterStop: Boolean(config.noReentryAfterStop),
+        regularSessionOnly: Boolean(config.regularSessionOnly),
+        firstBreakoutOnly: Boolean(config.firstBreakoutOnly),
       },
       startingCapitalUsd: Number(startingCapital),
     };
@@ -177,9 +184,49 @@ export default function StrategyBuilder({
         <input className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100" value={config.name} onChange={(e) => updateConfig('name', e.target.value)} />
       </label>
 
-      <div className="rounded-lg border border-slate-700 bg-slate-950/70 p-4">
-        <p className="text-sm font-medium text-emerald-300">Entry Trigger</p>
-        <p className="mt-1 text-sm text-slate-400">Price breaks above running daily high at bar open (no look-ahead).</p>
+      <div className="rounded-lg border border-slate-700 bg-slate-950/70 p-4 space-y-4">
+        <div>
+          <p className="text-sm font-medium text-emerald-300">Entry Trigger</p>
+          <select
+            className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            value={config.entryTrigger}
+            onChange={(e) => updateConfig('entryTrigger', e.target.value)}
+          >
+            <option value="OpeningRangeHighBreak">Opening range high break</option>
+            <option value="PriceBreaksAboveDailyHigh">Daily high break</option>
+          </select>
+          <p className="mt-1 text-xs text-slate-500">Bar-open only, Eastern session times, no look-ahead.</p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <label className="block text-sm">
+            <span className="mb-1 block text-slate-400">Opening range (min)</span>
+            <input type="number" min="1" max="30" className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100" value={config.openingRangeMinutes} onChange={(e) => updateConfig('openingRangeMinutes', e.target.value)} />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-slate-400">Entry window start</span>
+            <input type="time" className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100" value={config.entryWindowStart} onChange={(e) => updateConfig('entryWindowStart', e.target.value)} />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-slate-400">Entry window end</span>
+            <input type="time" className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100" value={config.entryWindowEnd} onChange={(e) => updateConfig('entryWindowEnd', e.target.value)} />
+          </label>
+        </div>
+
+        <div className="flex flex-wrap gap-4 text-sm text-slate-300">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={config.firstBreakoutOnly} onChange={(e) => updateConfig('firstBreakoutOnly', e.target.checked)} />
+            First breakout only
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={config.noReentryAfterStop} onChange={(e) => updateConfig('noReentryAfterStop', e.target.checked)} />
+            No re-entry after stop
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={config.regularSessionOnly} onChange={(e) => updateConfig('regularSessionOnly', e.target.checked)} />
+            Regular session only
+          </label>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -209,7 +256,7 @@ export default function StrategyBuilder({
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <label className="block text-sm">
           <span className="mb-1 block text-slate-300">Auto Exit Time</span>
           <input type="time" className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100" value={config.closeAllAt} onChange={(e) => updateConfig('closeAllAt', e.target.value)} />
@@ -221,6 +268,10 @@ export default function StrategyBuilder({
         <label className="block text-sm">
           <span className="mb-1 block text-slate-300">Max Concurrent Trades</span>
           <input type="number" min="1" className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100" value={config.maxConcurrentTrades} onChange={(e) => updateConfig('maxConcurrentTrades', e.target.value)} />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-slate-300">Max Trades / Day</span>
+          <input type="number" min="1" className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100" value={config.maxTradesPerDay} onChange={(e) => updateConfig('maxTradesPerDay', e.target.value)} />
         </label>
       </div>
 

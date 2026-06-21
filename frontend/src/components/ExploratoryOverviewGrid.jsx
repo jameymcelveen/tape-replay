@@ -11,6 +11,7 @@ const PNL_CLAMP = 500;
 export default function ExploratoryOverviewGrid({
   tradingDays = [],
   rows = [],
+  selectedCell = null,
   onCellClick,
 }) {
   const gridWidth = tradingDays.length * CELL_WIDTH;
@@ -70,6 +71,7 @@ export default function ExploratoryOverviewGrid({
               <div key={row.ticker} className="flex" style={{ height: ROW_HEIGHT }}>
                 {tradingDays.map((day) => {
                   const cell = row.dayMap?.[day];
+                  const isSelected = selectedCell?.ticker === row.ticker && selectedCell?.date === day;
                   const color = mapNetPnlToColor(
                     cell?.netTotalPnL,
                     cell?.hasData,
@@ -82,7 +84,9 @@ export default function ExploratoryOverviewGrid({
                       type="button"
                       title={buildTooltip(row.ticker, day, cell)}
                       disabled={!cell?.hasData}
-                      className="shrink-0 rounded-sm border border-slate-950/60 p-0 hover:ring-1 hover:ring-slate-400 disabled:cursor-default"
+                      className={`shrink-0 rounded-sm border p-0 hover:ring-1 hover:ring-slate-400 disabled:cursor-default ${
+                        isSelected ? 'ring-2 ring-sky-400 border-sky-300' : 'border-slate-950/60'
+                      }`}
                       style={{ width: CELL_WIDTH, height: ROW_HEIGHT, backgroundColor: color }}
                       onClick={() => {
                         if (cell?.hasData) {
@@ -99,7 +103,7 @@ export default function ExploratoryOverviewGrid({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 px-3 py-2 text-xs text-slate-500">
-        <span>Click a cell to open the candlestick chart for that ticker and day.</span>
+        <span>Click a cell to load the chart below. Keep clicking days to browse without leaving this page.</span>
         <OverviewLegend clamp={PNL_CLAMP} />
       </div>
     </div>
@@ -147,7 +151,8 @@ function buildTooltip(ticker, day, cell) {
     return `${ticker} ${day}: no trades`;
   }
 
-  return `${ticker} ${day}: net ${formatMoney(cell.netTotalPnL)} (${cell.tradeCount} trades)`;
+  const capture = cell.idealCapturePct != null ? `, capture ${Number(cell.idealCapturePct).toFixed(0)}% of ideal` : '';
+  return `${ticker} ${day}: net ${formatMoney(cell.netTotalPnL)} (${cell.tradeCount} trades${capture})`;
 }
 
 export function indexExploratoryRows(gridRows) {

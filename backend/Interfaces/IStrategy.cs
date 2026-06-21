@@ -36,7 +36,18 @@ public sealed class EntryDecisionContext
 
     public decimal BarOpen { get; init; }
 
+    /// <summary>Eastern wall-clock time for the current bar.</summary>
     public TimeOnly MarketTime { get; init; }
+
+    public int DailyTradesCompleted { get; init; }
+
+    public bool StoppedOutToday { get; init; }
+
+    public bool FirstBreakoutConsumed { get; init; }
+
+    public decimal? OpeningRangeHigh { get; init; }
+
+    public bool OpeningRangeComplete { get; init; }
 }
 
 public sealed class BarContext

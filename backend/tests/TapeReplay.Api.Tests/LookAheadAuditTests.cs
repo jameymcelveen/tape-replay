@@ -37,7 +37,9 @@ public sealed class LookAheadAuditTests
         {
             Name = "Test",
             PositionSizeUsd = 2_000m,
-            MaxConcurrentTrades = 10
+            MaxConcurrentTrades = 10,
+            EntryWindowStart = new TimeOnly(15, 0),
+            EntryWindowEnd = new TimeOnly(16, 0),
         };
 
         var result = engine.Run("TEST", new DateOnly(2024, 6, 3), config, bars, new TradeCostConfig());
